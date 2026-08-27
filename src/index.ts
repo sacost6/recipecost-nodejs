@@ -1,10 +1,11 @@
 import express, { Express, Request, Response } from 'express';
+import { env } from './schemas/env.schema';
 import 'dotenv/config';
 
 const app: Express = express();
 
-const ENVIRONMENT = process.env.NODE_ENV ?? 'development';
-const PORT = Number(process.env.PORT) || 3000;
+const ENVIRONMENT = env.NODE_ENV;
+const PORT = env.PORT;
 
 app.use(express.json());
 
@@ -15,5 +16,3 @@ app.get('/', (req: Request, res: Response) => {
 app.listen(PORT, () => {
   console.log(`Server is running in ${ENVIRONMENT} mode on port ${PORT}`);
 });
-// Another Test
-// Another Test
