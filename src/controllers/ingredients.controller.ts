@@ -62,8 +62,5 @@ export const deleteIngredient = async (
   const { ingredientId } = req.params;
   await deleteIngredientService(ingredientId);
 
-  res.status(204).json({
-    status: 'success',
-    data: null,
-  });
+  res.status(204).send();
 };

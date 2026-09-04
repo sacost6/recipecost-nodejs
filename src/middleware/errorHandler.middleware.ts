@@ -12,7 +12,7 @@ type AppError = Error & {
   status?: number;
 };
 
-export const errorHandler: ErrorRequestHandler = (err, req, res) => {
+export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   const error = err as AppError;
 
   const statusCode = error.statusCode ?? 500;

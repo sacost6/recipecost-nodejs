@@ -3,7 +3,7 @@ import {
   type UpdateIngredientInput,
   type Ingredient,
 } from '../schemas/ingredient.schema';
-
+import { randomUUID } from 'node:crypto';
 import { HttpError } from '../utils/httpError';
 
 const ingredients: Ingredient[] = [];
@@ -30,7 +30,7 @@ export const createIngredientService = async (
   input: CreateIngredientInput,
 ): Promise<Ingredient> => {
   const newIngredient: Ingredient = {
-    id: (ingredients.length + 1).toString(),
+    id: randomUUID(),
     ...input,
     costPerUnit: input.packageCost / input.packageSize,
   };
@@ -57,6 +57,8 @@ export const updateIngredientService = async (
     ...input,
   };
 
+  updatedIngredient.costPerUnit =
+    updatedIngredient.packageCost / updatedIngredient.packageSize;
   ingredients[ingredientIndex] = updatedIngredient;
 
   return updatedIngredient;

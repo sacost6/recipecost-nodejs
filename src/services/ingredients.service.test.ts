@@ -5,7 +5,7 @@ import {
   getIngredientByIdService,
   deleteIngredientService,
   resetIngredientsForTest,
-} from '../ingredients.service';
+} from './ingredients.service';
 
 describe('ingredients service', () => {
   beforeEach(() => {
@@ -21,19 +21,19 @@ describe('ingredients service', () => {
   it('creates an ingredient', async () => {
     const ingredient = await createIngredientService({
       name: 'Flour',
-      quantity: 1,
       unit: 'g',
       packageSize: 5000,
       packageCost: 8.99,
     });
 
-    expect(ingredient.id).toBe('1');
+    expect(ingredient.id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
   });
 
   it('retrieves an ingredient by ID', async () => {
     const ingredient = await createIngredientService({
       name: 'Flour',
-      quantity: 1,
       unit: 'g',
       packageSize: 5000,
       packageCost: 8.99,
@@ -46,7 +46,6 @@ describe('ingredients service', () => {
   it('deletes an ingredient', async () => {
     const ingredient = await createIngredientService({
       name: 'Flour',
-      quantity: 1,
       unit: 'g',
       packageSize: 5000,
       packageCost: 8.99,
@@ -57,5 +56,26 @@ describe('ingredients service', () => {
     await expect(getIngredientByIdService(ingredient.id)).rejects.toThrow(
       'Ingredient not found',
     );
+  });
+
+  // regression test
+  it('does not reuse IDs after deleting ingredients', async () => {
+    const firstIngredient = await createIngredientService({
+      name: 'Flour',
+      unit: 'g',
+      packageSize: 5000,
+      packageCost: 8.99,
+    });
+
+    await deleteIngredientService(firstIngredient.id);
+
+    const secondIngredient = await createIngredientService({
+      name: 'Sugar',
+      unit: 'g',
+      packageSize: 1000,
+      packageCost: 3.99,
+    });
+
+    expect(secondIngredient.id).not.toBe(firstIngredient.id);
   });
 });
