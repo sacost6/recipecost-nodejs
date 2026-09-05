@@ -1,8 +1,8 @@
 import { AppDataSource } from '../data-source';
 import { Ingredient } from '../entities/Ingredient';
 import {
-  type CreateIngredientInput,
-  type UpdateIngredientInput,
+  CreateIngredientInput,
+  UpdateIngredientInput,
 } from '../schemas/ingredient.schema';
 import { HttpError } from '../utils/httpError';
 
