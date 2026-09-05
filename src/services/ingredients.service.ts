@@ -1,23 +1,25 @@
+import { AppDataSource } from '../data-source';
+import { Ingredient } from '../entities/Ingredient';
 import {
   type CreateIngredientInput,
   type UpdateIngredientInput,
-  type Ingredient,
 } from '../schemas/ingredient.schema';
-import { randomUUID } from 'node:crypto';
 import { HttpError } from '../utils/httpError';
 
-const ingredients: Ingredient[] = [];
+const ingredientRepository = AppDataSource.getRepository(Ingredient);
 
 export const getIngredientsService = async (): Promise<Ingredient[]> => {
-  return ingredients;
+  return ingredientRepository.find({
+    order: { name: 'ASC' },
+  });
 };
 
 export const getIngredientByIdService = async (
   ingredientId: string,
-): Promise<Ingredient | undefined> => {
-  const ingredient = ingredients.find(
-    (ingredient) => ingredient.id === ingredientId,
-  );
+): Promise<Ingredient> => {
+  const ingredient = await ingredientRepository.findOneBy({
+    ingredientId,
+  });
 
   if (!ingredient) {
     throw new HttpError(404, 'Ingredient not found');
@@ -29,55 +31,32 @@ export const getIngredientByIdService = async (
 export const createIngredientService = async (
   input: CreateIngredientInput,
 ): Promise<Ingredient> => {
-  const newIngredient: Ingredient = {
-    id: randomUUID(),
-    ...input,
-    costPerUnit: input.packageCost / input.packageSize,
-  };
+  const ingredient = ingredientRepository.create({
+    name: input.name,
+    categoryId: input.categoryId ?? null,
+    description: input.description ?? null,
+  });
 
-  ingredients.push(newIngredient);
-
-  return newIngredient;
+  return ingredientRepository.save(ingredient);
 };
 
 export const updateIngredientService = async (
-  ingredientId: string | string[],
+  ingredientId: string,
   input: UpdateIngredientInput,
 ): Promise<Ingredient> => {
-  const ingredientIndex = ingredients.findIndex(
-    (ingredient) => ingredient.id === ingredientId,
-  );
+  const ingredient = await getIngredientByIdService(ingredientId);
 
-  if (ingredientIndex === -1) {
-    throw new HttpError(404, 'Ingredient not found');
-  }
+  ingredientRepository.merge(ingredient, input);
 
-  const updatedIngredient: Ingredient = {
-    ...ingredients[ingredientIndex],
-    ...input,
-  };
-
-  updatedIngredient.costPerUnit =
-    updatedIngredient.packageCost / updatedIngredient.packageSize;
-  ingredients[ingredientIndex] = updatedIngredient;
-
-  return updatedIngredient;
+  return ingredientRepository.save(ingredient);
 };
 
 export const deleteIngredientService = async (
   ingredientId: string,
 ): Promise<void> => {
-  const ingredientIndex = ingredients.findIndex(
-    (ingredient) => ingredient.id === ingredientId,
-  );
+  const result = await ingredientRepository.delete({ ingredientId });
 
-  if (ingredientIndex === -1) {
+  if (result.affected === 0) {
     throw new HttpError(404, 'Ingredient not found');
   }
-
-  ingredients.splice(ingredientIndex, 1);
-};
-
-export const resetIngredientsForTest = (): void => {
-  ingredients.length = 0;
 };

@@ -7,6 +7,7 @@ export const EnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   API_SECRET: z.string().min(1, 'API_SECRET is required'),
   LOG_LEVEL: z.string().optional().default('info'),
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is missing'),
 });
 
 export const env = EnvSchema.parse(process.env);
