@@ -41,7 +41,10 @@ export const createIngredient = async (req: Request, res: Response) => {
   });
 };
 
-export const updateIngredient = async (req: Request, res: Response) => {
+export const updateIngredient = async (
+  req: Request<IngredientParamsSchema>,
+  res: Response,
+) => {
   const { ingredientId } = req.params;
   const updateData = req.body;
   const updatedIngredient = await updateIngredientService(

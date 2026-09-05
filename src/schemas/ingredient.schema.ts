@@ -29,3 +29,7 @@ export const updateIngredientSchema = ingredientParamsSchema.extend({
 export type CreateIngredientInput = z.infer<typeof createIngredientBodySchema>;
 
 export type UpdateIngredientInput = z.infer<typeof updateIngredientBodySchema>;
+
+export type IngredientParamsSchema = z.infer<
+  typeof ingredientParamsSchema
+>['params'];
