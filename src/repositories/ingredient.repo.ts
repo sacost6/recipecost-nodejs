@@ -10,4 +10,5 @@ export type IngredientRow = {
   description: string | null;
   created_at: Date;
   updated_at: Date;
+  version: number;
 };

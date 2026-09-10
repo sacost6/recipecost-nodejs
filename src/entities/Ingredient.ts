@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
   Unique,
   Index,
+  VersionColumn,
 } from 'typeorm';
 
 import { IngredientCategory } from './IngredientCategory';
@@ -75,4 +76,7 @@ export class Ingredient {
     default: () => 'CURRENT_TIMESTAMP',
   })
   updatedAt!: Date;
+
+  @VersionColumn({ default: 1 })
+  version!: number;
 }

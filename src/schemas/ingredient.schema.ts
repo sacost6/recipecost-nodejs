@@ -8,9 +8,18 @@ const createIngredientBodySchema = z.strictObject({
 
 const updateIngredientBodySchema = createIngredientBodySchema
   .partial()
-  .refine((body) => Object.values(body).some((value) => value !== undefined), {
-    message: 'At least one field is required to update an ingredient',
-  });
+  .extend({
+    version: z.number().int().positive().max(2147483647),
+  })
+  .refine(
+    (body) =>
+      body.name !== undefined ||
+      body.categoryId !== undefined ||
+      body.description !== undefined,
+    {
+      message: 'At least one field is required to update an ingredient',
+    },
+  );
 
 export const createIngredientSchema = z.object({
   body: createIngredientBodySchema,

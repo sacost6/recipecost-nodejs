@@ -45,14 +45,29 @@ export const updateIngredientService = async (
   ingredientId: string,
   input: UpdateIngredientInput,
 ): Promise<Ingredient> => {
-  const result = await ingredientRepository.update({ ingredientId }, input, {
-    returning: '*',
-  });
+  const { version: expectedVersion, ...changes } = input;
+
+  const result = await ingredientRepository.update(
+    { ingredientId, version: expectedVersion },
+    changes,
+    { returning: '*' },
+  );
 
   const [row] = result.raw as IngredientRow[];
 
   if (!row) {
-    throw new HttpError(404, 'Ingredient not found');
+    const exists = await ingredientRepository.existsBy({
+      ingredientId,
+    });
+
+    if (!exists) {
+      throw new HttpError(404, 'Ingredient not found');
+    }
+
+    throw new HttpError(
+      409,
+      'This ingredient has changed. Reload it before saving again.',
+    );
   }
 
   return ingredientRepository.create({
@@ -62,6 +77,7 @@ export const updateIngredientService = async (
     description: row.description,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    version: row.version,
   });
 };
 
