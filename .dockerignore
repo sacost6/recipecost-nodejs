@@ -1,0 +1,14 @@
+# Ignore local node modules (crucial to prevent OS conflicts)
+node_modules
+npm-debug.log*
+
+# Ignore environment files
+.env
+.env.local
+
+# Ignore version control and IDE settings
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store

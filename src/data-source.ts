@@ -14,15 +14,12 @@ import { Unit } from './entities/Unit';
 export const AppDataSource = new DataSource({
   type: 'postgres',
   url: env.DATABASE_URL,
-  entities: [
-    Ingredient,
-    IngredientCategory,
-    IngredientProduct,
-    IngredientUnitConversion,
-    ProductPrice,
-    Retailer,
-    StoreLocation,
-    Unit,
-  ],
+  ssl:
+    process.env.NODE_ENV == 'production'
+      ? { rejectUnauthorized: true }
+      : { rejectUnauthorized: false },
+  entities: ['src/entities/**/*.ts'],
+  migrations: ['src/migrations/**/*.ts'],
   synchronize: false,
+  logging: ['error', 'warn'],
 });
