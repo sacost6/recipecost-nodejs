@@ -1,11 +1,15 @@
 import * as z from 'zod';
-import { positiveBigintIdSchema, positiveDecimal18_9Schema } from './utils';
+import {
+  positiveBigintIdSchema,
+  positiveDecimal18_9Schema,
+  positiveSmallintSchema,
+} from './utils';
 
 const createIngredientUnitConversionBodySchema = z
   .strictObject({
     ingredientId: positiveBigintIdSchema,
-    fromUnitId: z.number().int().positive().max(32767),
-    toUnitId: z.number().int().positive().max(32767),
+    fromUnitId: positiveSmallintSchema,
+    toUnitId: positiveSmallintSchema,
     conversionFactor: positiveDecimal18_9Schema,
   })
   .refine((body) => body.fromUnitId !== body.toUnitId, {
@@ -24,8 +28,8 @@ export const createIngredientUnitConversionSchema = z.object({
 export const ingredientUnitConversionParamsSchema = z.object({
   params: z.object({
     ingredientId: positiveBigintIdSchema,
-    fromUnitId: z.number().int().positive().max(32767),
-    toUnitId: z.number().int().positive().max(32767),
+    fromUnitId: positiveSmallintSchema,
+    toUnitId: positiveSmallintSchema,
   }),
 });
 

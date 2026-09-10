@@ -1,15 +1,21 @@
 import * as z from 'zod';
+import {
+  positiveSmallintSchema,
+  positiveIntegerSchema,
+  stringSchema,
+  positiveBigintIdSchema,
+} from './utils';
 
 const createIngredientBodySchema = z.strictObject({
-  name: z.string().trim().min(1, 'Name is required').max(100),
-  categoryId: z.number().int().positive().max(32767).nullable().optional(),
-  description: z.string().trim().nullable().optional(),
+  name: stringSchema.min(1, 'Name is required').max(100),
+  categoryId: positiveSmallintSchema.nullable().optional(),
+  description: stringSchema.nullable().optional(),
 });
 
 const updateIngredientBodySchema = createIngredientBodySchema
   .partial()
   .extend({
-    version: z.number().int().positive().max(2147483647),
+    version: positiveIntegerSchema,
   })
   .refine(
     (body) =>
@@ -27,7 +33,7 @@ export const createIngredientSchema = z.object({
 
 export const ingredientParamsSchema = z.object({
   params: z.object({
-    ingredientId: z.string().trim().min(1, 'Ingredient ID is required'),
+    ingredientId: positiveBigintIdSchema,
   }),
 });
 

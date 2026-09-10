@@ -5,6 +5,7 @@ export const currencyCodeSchema = z
   .trim()
   .toUpperCase()
   .regex(/^[A-Z]{CURRENCY_LENGTH}$/);
+
 export const positiveBigintIdSchema = z
   .string()
   .trim()
@@ -41,3 +42,12 @@ export const nonnegativeDecimal12_2Schema = z
     /^\d{1,10}(?:\.\d{1,2})?$/,
     'Price must have up to 10 integer digits and 2 decimal places',
   );
+export const positiveSmallintSchema = z.number().int().positive().max(32767);
+
+export const positiveIntegerSchema = z
+  .number()
+  .int()
+  .positive()
+  .max(2147483647);
+
+export const stringSchema = z.string().trim();

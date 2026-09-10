@@ -1,15 +1,15 @@
 import * as z from 'zod';
-import { positiveBigintIdSchema } from './utils';
+import { positiveBigintIdSchema, stringSchema } from './utils';
 
 const createStoreLocationBodySchema = z.strictObject({
   retailerId: positiveBigintIdSchema,
-  storeNumber: z.string().trim().max(32767),
-  addressLine1: z.string().trim().max(32767),
-  addressLine2: z.string().trim().max(32767),
-  city: z.string().trim().max(32767),
-  stateCode: z.string().trim().max(32767),
-  postalCode: z.string().trim().max(32767),
-  countryCode: z.string().trim().max(32767),
+  storeNumber: stringSchema.max(32767),
+  addressLine1: stringSchema.max(32767),
+  addressLine2: stringSchema.max(32767),
+  city: stringSchema.max(32767),
+  stateCode: stringSchema.max(32767),
+  postalCode: stringSchema.max(32767),
+  countryCode: stringSchema.max(32767),
 });
 
 const updateStoreLocationBodySchema = createStoreLocationBodySchema

@@ -1,13 +1,18 @@
 import * as z from 'zod';
-import { positiveBigintIdSchema, positiveDecimal12_4Schema } from './utils';
+import {
+  positiveBigintIdSchema,
+  positiveDecimal12_4Schema,
+  positiveSmallintSchema,
+  stringSchema,
+} from './utils';
 
 const createIngredientProductBodySchema = z.strictObject({
   ingredientId: positiveBigintIdSchema,
-  packageUnitId: z.number().int().positive().max(32767),
-  brand: z.string().trim().max(100).nullable().optional(),
-  productName: z.string().trim().min(1, 'Product Name is required').max(150),
+  packageUnitId: positiveSmallintSchema,
+  brand: stringSchema.max(100).nullable().optional(),
+  productName: stringSchema.min(1, 'Product Name is required').max(150),
   packageQuantity: positiveDecimal12_4Schema,
-  upc: z.string().trim().max(20).nullable().optional(),
+  upc: stringSchema.max(20).nullable().optional(),
 });
 
 const updateIngredientProductBodySchema = createIngredientProductBodySchema
