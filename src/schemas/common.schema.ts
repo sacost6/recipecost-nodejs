@@ -4,7 +4,7 @@ export const currencyCodeSchema = z
   .string()
   .trim()
   .toUpperCase()
-  .regex(/^[A-Z]{CURRENCY_LENGTH}$/);
+  .regex(/^[A-Z]{3}$/);
 
 export const positiveBigintIdSchema = z
   .string()

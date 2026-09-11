@@ -3,7 +3,7 @@ import {
   positiveBigintIdSchema,
   positiveDecimal18_9Schema,
   positiveSmallintSchema,
-} from './schema_utils';
+} from './common.schema';
 
 const createIngredientUnitConversionBodySchema = z
   .strictObject({

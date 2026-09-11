@@ -5,7 +5,7 @@ import {
   getUserService,
 } from '../services/auth.service';
 import type { LoginInput, RegisterInput } from '../schemas/auth.schema';
-import { HttpError } from '../middleware/errorHandling/utils';
+import { HttpError } from '../middleware/errorHandling/ error';
 import { env } from '../schemas/env.schema';
 
 const generateSession = async (

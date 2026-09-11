@@ -1,4 +1,4 @@
-import type { AppError, ErrorResponse, PostgresError } from './utils';
+import type { AppError, ErrorResponse, PostgresError } from './ error';
 import type { ErrorRequestHandler } from 'express';
 import { logger } from '../logging.middleware';
 import { QueryFailedError } from 'typeorm';
@@ -37,6 +37,7 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
         }
 
         break;
+      case '23001':
       case '23503':
         statusCode = 409;
         message = 'A related record is missing or this record is still in use.';
@@ -53,7 +54,7 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
     response.stack = error.stack;
   }
 
-  logger.error({ error }, 'Request Failed');
+  logger.error({ err: error }, 'Request Failed');
 
   res.status(statusCode).json(response);
 };

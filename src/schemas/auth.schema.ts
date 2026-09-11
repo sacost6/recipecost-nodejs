@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { emailSchema } from './schema_utils';
+import { emailSchema } from './common.schema';
 
 export const registerSchema = z.object({
   body: z.strictObject({

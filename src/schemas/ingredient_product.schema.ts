@@ -4,7 +4,7 @@ import {
   positiveDecimal12_4Schema,
   positiveSmallintSchema,
   stringSchema,
-} from './schema_utils';
+} from './common.schema';
 
 const createIngredientProductBodySchema = z.strictObject({
   ingredientId: positiveBigintIdSchema,
@@ -30,6 +30,31 @@ export const ingredientProductParamsSchema = z.object({
     productId: positiveBigintIdSchema,
   }),
 });
+
+const queryIntegerSchema = z
+  .string()
+  .trim()
+  .regex(/^\d+$/, 'Must be a nonnegative whole number')
+  .transform(Number)
+  .pipe(z.number().int().nonnegative());
+
+const ingredientProductQuerySchema = z.strictObject({
+  ingredientId: positiveBigintIdSchema.optional(),
+  query: stringSchema.max(150).optional(),
+  brand: stringSchema.max(100).optional,
+
+  limit: queryIntegerSchema.pipe(z.number().min(1).max(100)).default(25),
+
+  offset: queryIntegerSchema.default(0),
+});
+
+export const listIngredientProductSchema = z.object({
+  query: ingredientProductQuerySchema,
+});
+
+export type ListIngredientProductsQuery = z.infer<
+  typeof ingredientProductQuerySchema
+>;
 
 export const updateIngredientProductSchema =
   ingredientProductParamsSchema.extend({

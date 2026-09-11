@@ -4,8 +4,17 @@ import {
   CreateIngredientInput,
   UpdateIngredientInput,
 } from '../schemas/ingredient.schema';
-import { HttpError } from '../middleware/errorHandling/utils';
-import { IngredientRow } from './service_utils';
+import { HttpError } from '../middleware/errorHandling/ error';
+
+export type IngredientRow = {
+  ingredient_id: string;
+  category_id: number | null;
+  name: string;
+  description: string | null;
+  created_at: Date;
+  updated_at: Date;
+  version: number;
+};
 
 export const getIngredientsService = async (): Promise<Ingredient[]> => {
   return ingredientRepository.find({

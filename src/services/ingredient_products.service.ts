@@ -4,10 +4,18 @@ import {
   CreateIngredientProductInput,
   UpdateIngredientProductInput,
 } from '../schemas/ingredient_product.schema';
-import { HttpError } from '../middleware/errorHandling/utils';
-import { IngredientProductFilters } from './service_utils';
+import { HttpError } from '../middleware/errorHandling/ error';
+
+type IngredientProductFilters = {
+  ingredientId?: string;
+  query?: string;
+  brand?: string;
+  limit?: number;
+  offset?: number;
+};
 
 export const getIngredientProductsService = async (
+  userId: string,
   filters: IngredientProductFilters = {},
 ): Promise<IngredientProduct[]> => {
   const { ingredientId, query, brand, limit = 25, offset = 0 } = filters;
@@ -20,7 +28,9 @@ export const getIngredientProductsService = async (
     throw new HttpError(400, 'Offset must be a nonnegative integer.');
   }
 
-  const products = ingredientProductRepository.createQueryBuilder('product');
+  const products = ingredientProductRepository
+    .createQueryBuilder('product')
+    .where('product.userId = :userId', { userId });
 
   if (ingredientId !== undefined) {
     products.andWhere('product.ingredientId = :ingredientId', {
@@ -36,8 +46,16 @@ export const getIngredientProductsService = async (
 
     products.andWhere(
       '(product.productName ILIKE :search OR product.brand ILIKE :search)',
-      { search: '%&{escapedTerm}%' },
+      { search: `%${escapedTerm}%` },
     );
+  }
+
+  const brandFilter = brand?.trim();
+
+  if (brandFilter) {
+    products.andWhere('LOWER(product.brand) = LOWER(:brand)', {
+      brand: brandFilter,
+    });
   }
 
   return products
@@ -49,10 +67,12 @@ export const getIngredientProductsService = async (
 };
 
 export const getIngredientProductByIdService = async (
+  userId: string,
   productId: string,
 ): Promise<IngredientProduct> => {
   const product = await ingredientProductRepository.findOneBy({
     productId,
+    userId,
   });
 
   if (!product) {
@@ -63,9 +83,11 @@ export const getIngredientProductByIdService = async (
 };
 
 export const createIngredientProductService = async (
+  userId: string,
   input: CreateIngredientProductInput,
 ): Promise<IngredientProduct> => {
   const ingredientProduct = ingredientProductRepository.create({
+    userId: userId,
     ingredientId: input.ingredientId,
     packageUnitId: input.packageUnitId,
     brand: input.brand ?? null,
@@ -78,10 +100,12 @@ export const createIngredientProductService = async (
 };
 
 export const getIngredientProductByUpc = async (
+  userId: string,
   upc: string,
 ): Promise<IngredientProduct> => {
   const product = await ingredientProductRepository.findOneBy({
     upc: upc.trim(),
+    userId,
   });
 
   if (!product) {
@@ -92,20 +116,37 @@ export const getIngredientProductByUpc = async (
 };
 
 export const updateIngredientProductService = async (
+  userId: string,
   productId: string,
   input: UpdateIngredientProductInput,
 ): Promise<IngredientProduct> => {
-  const ingredientProduct = await getIngredientProductByIdService(productId);
+  const result = await ingredientProductRepository.update(
+    { productId, userId },
+    {
+      ingredientId: input.ingredientId,
+      packageUnitId: input.packageUnitId,
+      brand: input.brand,
+      productName: input.productName,
+      packageQuantity: input.packageQuantity,
+      upc: input.upc,
+    },
+  );
 
-  ingredientProductRepository.merge(ingredientProduct, input);
+  if (result.affected === 0) {
+    throw new HttpError(404, 'Product not found.');
+  }
 
-  return ingredientProductRepository.save(ingredientProduct);
+  return getIngredientProductByIdService(userId, productId);
 };
 
 export const deleteIngredientProductService = async (
+  userId: string,
   productId: string,
 ): Promise<void> => {
-  const result = await ingredientProductRepository.delete({ productId });
+  const result = await ingredientProductRepository.delete({
+    productId,
+    userId,
+  });
 
   if (result.affected === 0) {
     throw new HttpError(404, 'Product not found.');

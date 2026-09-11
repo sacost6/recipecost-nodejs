@@ -17,4 +17,4 @@ authRoutes.post('/register', validateRequest(registerSchema), register);
 
 authRoutes.post('/logout', logout);
 
-authRoutes.post('/me', requireAuth, getUser);
+authRoutes.get('/me', requireAuth, getUser);

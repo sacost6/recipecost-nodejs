@@ -4,7 +4,7 @@ import {
   CreateStoreLocationInput,
   UpdateStoreLocationInput,
 } from '../schemas/store_locations.schema';
-import { HttpError } from '../middleware/errorHandling/utils';
+import { HttpError } from '../middleware/errorHandling/ error';
 
 export const getStoreLocationsService = async (): Promise<StoreLocation[]> => {
   return storeLocationRepository.find({

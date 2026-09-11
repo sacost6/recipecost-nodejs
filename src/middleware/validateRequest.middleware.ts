@@ -1,11 +1,11 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { ZodType } from 'zod';
-import { HttpError } from '../middleware/errorHandling/utils';
+import { HttpError } from './errorHandling/ error';
 
 type ValidatedRequestParts = {
   body?: Request['body'];
   params?: Request['params'];
-  query?: Request['query'];
+  query?: Record<string, unknown>;
 };
 
 export const validateRequest =
@@ -35,7 +35,7 @@ export const validateRequest =
     }
 
     if (validatedRequest.query !== undefined) {
-      req.query = validatedRequest.query;
+      res.locals.query = validatedRequest.query;
     }
 
     next();

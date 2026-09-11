@@ -5,7 +5,7 @@ import type {
   LoginInput,
   LogoutInput,
 } from '../schemas/auth.schema';
-import { HttpError } from '../middleware/errorHandling/utils';
+import { HttpError } from '../middleware/errorHandling/ error';
 import { StringValidation } from 'zod/v3';
 
 export const registerService = async (input: RegisterInput) => {

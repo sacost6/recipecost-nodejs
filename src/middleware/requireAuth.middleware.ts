@@ -1,5 +1,5 @@
 import type { RequestHandler } from 'express';
-import { HttpError } from '../middleware/errorHandling/utils';
+import { HttpError } from './errorHandling/ error';
 
 export const requireAuth: RequestHandler = (req, res, next) => {
   if (!req.session.userId) {
