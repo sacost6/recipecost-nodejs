@@ -15,5 +15,12 @@ export const loginSchema = z.object({
   }),
 });
 
+export const logoutSchema = z.object({
+  body: z.strictObject({
+    email: emailSchema,
+  }),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>['body'];
 export type LoginInput = z.infer<typeof loginSchema>['body'];
+export type LogoutInput = z.infer<typeof logoutSchema>['body'];

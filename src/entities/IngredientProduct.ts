@@ -15,9 +15,11 @@ import {
 import { Ingredient } from './Ingredient';
 import { Unit } from './Unit';
 import { ProductPrice } from './ProductPrice';
+import { User } from './User';
 
 @Entity('ingredient_products')
-@Unique('uq_product_upc', ['upc'])
+@Unique('uq_product_user_upc', ['userId', 'upc'])
+@Index('idx_ingredient_products_user_id', ['userId'])
 @Check('chk_product_package_quantity', `"package_quantity" > 0`)
 @Index('idx_ingredient_products_ingredient_id', ['ingredientId'])
 @Index('idx_ingredient_products_package_unit_id', ['packageUnitId'])
@@ -68,6 +70,19 @@ export class IngredientProduct {
     nullable: true,
   })
   upc!: string | null;
+
+  @Column({
+    name: 'user_id',
+    type: 'bigint',
+  })
+  userId!: string;
+
+  @ManyToOne(() => User, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'user_id' })
+  user!: User;
 
   @ManyToOne(() => Ingredient, (ingredient) => ingredient.products, {
     nullable: false,

@@ -1,7 +1,12 @@
 import * as argon2 from 'argon2';
 import { userRepository } from '../repositories/users.repo';
-import type { RegisterInput, LoginInput } from '../schemas/auth.schema';
+import type {
+  RegisterInput,
+  LoginInput,
+  LogoutInput,
+} from '../schemas/auth.schema';
 import { HttpError } from '../middleware/errorHandling/utils';
+import { StringValidation } from 'zod/v3';
 
 export const registerService = async (input: RegisterInput) => {
   const user = userRepository.create({
@@ -35,6 +40,21 @@ export const loginService = async (input: LoginInput) => {
 
   if (!passwordMatches) {
     throw new HttpError(401, 'Invalid email or password.');
+  }
+
+  return {
+    userId: user.userId,
+    email: user.email,
+  };
+};
+
+export const getUserService = async (userId: string) => {
+  const user = await userRepository.findOneBy({
+    userId,
+  });
+
+  if (!user) {
+    throw new HttpError(404, 'User not found.');
   }
 
   return {

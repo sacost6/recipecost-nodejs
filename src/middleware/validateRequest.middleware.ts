@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { ZodType } from 'zod';
-import { HttpError } from '../utils/httpError';
+import { HttpError } from '../middleware/errorHandling/utils';
 
 type ValidatedRequestParts = {
   body?: Request['body'];

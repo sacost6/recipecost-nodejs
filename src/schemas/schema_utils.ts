@@ -52,4 +52,8 @@ export const positiveIntegerSchema = z
 
 export const stringSchema = z.string().trim();
 
-export const emailSchema = z.string().trim().toLowerCase().email().max(254);
+export const emailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.email().max(254));

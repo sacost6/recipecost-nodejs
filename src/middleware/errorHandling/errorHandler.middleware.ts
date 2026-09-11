@@ -3,9 +3,9 @@ import type { ErrorRequestHandler } from 'express';
 import { logger } from '../logging.middleware';
 import { QueryFailedError } from 'typeorm';
 
-export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
+export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   if (res.headersSent) {
-    _next(err);
+    next(err);
     return;
   }
 
@@ -27,10 +27,15 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
     switch (databaseError.code) {
       case '23505':
         statusCode = 409;
-        message =
-          databaseError.constraint === 'uq_ingredients_name'
-            ? 'An ingredient with this name already exists.'
-            : 'A record with these values already exists.;';
+
+        if (databaseError.constraint === 'uq_users_email') {
+          message = 'Email has already been registered.';
+        } else if (databaseError.constraint == 'uq_ingredients_name') {
+          message = 'An ingredient with this name already exists.';
+        } else {
+          message = 'A record with these values already exists.';
+        }
+
         break;
       case '23503':
         statusCode = 409;
