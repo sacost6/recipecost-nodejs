@@ -39,6 +39,14 @@ vi.mock('../middleware/logging.middleware', async () => {
   return { logger: pino({ level: 'silent' }) };
 });
 
+vi.mock('./auth.routes', async () => {
+  const { Router } = await import('express');
+  return { authRoutes: Router() };
+});
+vi.mock('../middleware/session.middleware', () => ({
+  sessionMiddleware: (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
+
 import { app } from '../app';
 import { AppDataSource } from '../data-source';
 import { Ingredient } from '../entities/Ingredient';
@@ -46,6 +54,10 @@ import { IngredientCategory } from '../entities/IngredientCategory';
 import { IngredientProduct } from '../entities/IngredientProduct';
 import { IngredientUnitConversion } from '../entities/IngredientUnitConversion';
 import { Unit } from '../entities/Unit';
+import { User } from '../entities/User';
+import { ProductPrice } from '../entities/ProductPrice';
+import { StoreLocation } from '../entities/StoreLocation';
+import { Retailer } from '../entities/Retailer';
 import { ingredientRepository } from '../repositories/ingredient.repo';
 
 const testUrl = process.env.INGREDIENT_TEST_DATABASE_URL;
@@ -56,7 +68,22 @@ describe.skipIf(!testUrl)('ingredients API with real PostgreSQL', () => {
   beforeAll(async () => {
     AppDataSource.setOptions({
       schema,
+      // Use the test URL's TLS settings instead of the development DB defaults.
+      ssl: undefined,
       synchronize: false,
+      // Import entities through Vitest instead of loading .ts globs via Node.
+      entities: [
+        Ingredient,
+        IngredientCategory,
+        IngredientProduct,
+        IngredientUnitConversion,
+        Unit,
+        User,
+        ProductPrice,
+        StoreLocation,
+        Retailer,
+      ],
+      migrations: [],
       extra: {
         max: 10,
         connectionTimeoutMillis: 5000,
@@ -71,7 +98,7 @@ describe.skipIf(!testUrl)('ingredients API with real PostgreSQL', () => {
 
   beforeEach(async () => {
     await AppDataSource.query(
-      `TRUNCATE TABLE ${ingredientsTable}, "${schema}"."ingredient_categories", "${schema}"."units" RESTART IDENTITY CASCADE`,
+      `TRUNCATE TABLE ${ingredientsTable}, "${schema}"."ingredient_categories", "${schema}"."units", "${schema}"."users" RESTART IDENTITY CASCADE`,
     );
   });
 
@@ -121,9 +148,17 @@ describe.skipIf(!testUrl)('ingredients API with real PostgreSQL', () => {
 
   async function seedProduct(ingredient: Ingredient) {
     const unit = await seedUnit();
+    const users = AppDataSource.getRepository(User);
+    const owner = await users.save(
+      users.create({
+        email: `ingredient-fixture-${randomUUID()}@example.com`,
+        passwordHash: 'not-used-for-authentication-in-ingredient-tests',
+      }),
+    );
     const repository = AppDataSource.getRepository(IngredientProduct);
     return repository.save(
       repository.create({
+        userId: owner.userId,
         ingredientId: ingredient.ingredientId,
         packageUnitId: unit.unitId,
         productName: 'Flour bag',

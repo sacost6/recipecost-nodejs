@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { QueryFailedError } from 'typeorm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HttpError } from '../../utils/httpError';
+import { HttpError } from './ error';
 import { errorHandler } from './errorHandler.middleware';
 
 const { logError, serializedLogs } = vi.hoisted(() => ({

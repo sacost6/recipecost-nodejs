@@ -21,6 +21,14 @@ const repository = vi.hoisted(() => ({
 vi.mock('../repositories/ingredient.repo', () => ({
   ingredientRepository: repository,
 }));
+// These tests cover ingredients; authentication has its own HTTP/session suite.
+vi.mock('./auth.routes', async () => {
+  const { Router } = await import('express');
+  return { authRoutes: Router() };
+});
+vi.mock('../middleware/session.middleware', () => ({
+  sessionMiddleware: (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
 vi.mock('../middleware/logging.middleware', async () => {
   const { default: pino } = await import('pino');
   return { logger: pino({ level: 'silent' }) };

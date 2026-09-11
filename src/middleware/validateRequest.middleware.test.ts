@@ -6,7 +6,7 @@ import {
   ingredientParamsSchema,
   updateIngredientSchema,
 } from '../schemas/ingredient.schema';
-import { HttpError } from '../utils/httpError';
+import { HttpError } from './errorHandling/ error';
 import { validateRequest } from './validateRequest.middleware';
 
 const request = (parts: Partial<Request> = {}): Request =>

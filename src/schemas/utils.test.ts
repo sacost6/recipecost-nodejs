@@ -4,7 +4,7 @@ import {
   positiveIntegerSchema,
   positiveSmallintSchema,
   stringSchema,
-} from './utils';
+} from './common.schema';
 
 describe('positiveBigintIdSchema', () => {
   it.each([
