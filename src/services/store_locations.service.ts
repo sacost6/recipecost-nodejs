@@ -1,4 +1,4 @@
-import { AppDataSource } from '../data-source';
+import { storeLocationRepository } from '../repositories/store_locations.repo';
 import { StoreLocation } from '../entities/StoreLocation';
 import {
   CreateStoreLocationInput,
@@ -6,7 +6,7 @@ import {
 } from '../schemas/store_locations.schema';
 import { HttpError } from '../utils/httpError';
 
-const storeLocationRepository = AppDataSource.getRepository(StoreLocation);
+
 
 export const getStoreLocationsService = async (): Promise<StoreLocation[]> => {
   return storeLocationRepository.find({

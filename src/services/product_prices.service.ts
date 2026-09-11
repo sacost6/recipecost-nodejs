@@ -1,13 +1,10 @@
-import { AppDataSource } from '../data-source';
+import { productPriceRepository } from '../repositories/product_prices.schema';
 import { ProductPrice } from '../entities/ProductPrice';
 import {
   CreateProductPriceInput,
   UpdateProductPriceInput,
 } from '../schemas/product_prices.schema';
 import { HttpError } from '../utils/httpError';
-
-const productPriceRepository = AppDataSource.getRepository(ProductPrice);
-
 export const getProductPricesService = async (): Promise<ProductPrice[]> => {
   return productPriceRepository.find({
     order: { productId: 'ASC' },

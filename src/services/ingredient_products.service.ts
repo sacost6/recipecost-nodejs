@@ -1,4 +1,4 @@
-import { AppDataSource } from '../data-source';
+import { ingredientProductRepository } from '../repositories/ingredient_products.repo';
 import { IngredientProduct } from '../entities/IngredientProduct';
 import {
   CreateIngredientProductInput,
@@ -6,8 +6,6 @@ import {
 } from '../schemas/ingredient_product.schema';
 import { HttpError } from '../utils/httpError';
 
-const ingredientProductRepository =
-  AppDataSource.getRepository(IngredientProduct);
 
 export const getIngredientProductsService = async (): Promise<
   IngredientProduct[]

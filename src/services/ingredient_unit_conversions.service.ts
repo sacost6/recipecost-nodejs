@@ -1,4 +1,4 @@
-import { AppDataSource } from '../data-source';
+import { ingredientUnitConversionRepository } from '../repositories/ingredient_unit_conversion.repo';
 import { IngredientUnitConversion } from '../entities/IngredientUnitConversion';
 import {
   CreateIngredientUnitConversionInput,
@@ -6,9 +6,7 @@ import {
 } from '../schemas/ingredient_unit_conversion.schema';
 import { HttpError } from '../utils/httpError';
 
-const ingredientUnitConversionRepository = AppDataSource.getRepository(
-  IngredientUnitConversion,
-);
+
 
 export const getIngredientUnitConversionsService = async (): Promise<
   IngredientUnitConversion[]
