@@ -5,36 +5,8 @@ import {
   getUserService,
 } from '../services/auth.service';
 import type { LoginInput, RegisterInput } from '../schemas/auth.schema';
-import { HttpError } from '../middleware/errorHandling/ error';
 import { env } from '../schemas/env.schema';
-
-const generateSession = async (
-  req: Pick<Request, 'session'>,
-  user: { userId: string; email: string },
-) => {
-  await new Promise<void>((resolve, reject) => {
-    req.session.regenerate((error) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve();
-    });
-  });
-
-  req.session.userId = user.userId;
-
-  await new Promise<void>((resolve, reject) => {
-    req.session.save((error) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-
-      resolve();
-    });
-  });
-};
+import { generateSession, requireUserId } from './utils/auth';
 
 export const login = async (
   req: Request<Record<string, never>, unknown, LoginInput>,
@@ -87,11 +59,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const getUser = async (req: Request, res: Response): Promise<void> => {
-  const userId = req.session.userId;
-
-  if (!userId) {
-    throw new HttpError(401, 'Please log in.');
-  }
+  const userId = requireUserId(req);
 
   const user = await getUserService(userId);
 
