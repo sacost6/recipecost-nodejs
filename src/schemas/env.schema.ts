@@ -8,6 +8,7 @@ export const EnvSchema = z.object({
   API_SECRET: z.string().min(1, 'API_SECRET is required'),
   LOG_LEVEL: z.string().optional().default('info'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is missing'),
+  SESSION_SECRET: z.string().min(32),
 });
 
 export const env = EnvSchema.parse(process.env);

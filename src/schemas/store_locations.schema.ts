@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { positiveBigintIdSchema, stringSchema } from './utils';
+import { positiveBigintIdSchema, stringSchema } from './schema_utils';
 
 const createStoreLocationBodySchema = z.strictObject({
   retailerId: positiveBigintIdSchema,

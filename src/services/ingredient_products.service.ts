@@ -4,29 +4,62 @@ import {
   CreateIngredientProductInput,
   UpdateIngredientProductInput,
 } from '../schemas/ingredient_product.schema';
-import { HttpError } from '../utils/httpError';
+import { HttpError } from '../middleware/errorHandling/utils';
+import { IngredientProductFilters } from './service_utils';
 
+export const getIngredientProductsService = async (
+  filters: IngredientProductFilters = {},
+): Promise<IngredientProduct[]> => {
+  const { ingredientId, query, brand, limit = 25, offset = 0 } = filters;
 
-export const getIngredientProductsService = async (): Promise<
-  IngredientProduct[]
-> => {
-  return ingredientProductRepository.find({
-    order: { productName: 'ASC' },
-  });
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
+    throw new HttpError(400, 'Limit must be an integer between 1 and 100.');
+  }
+
+  if (!Number.isSafeInteger(offset) || offset < 0) {
+    throw new HttpError(400, 'Offset must be a nonnegative integer.');
+  }
+
+  const products = ingredientProductRepository.createQueryBuilder('product');
+
+  if (ingredientId !== undefined) {
+    products.andWhere('product.ingredientId = :ingredientId', {
+      ingredientId,
+    });
+  }
+
+  const searchTerm = query?.trim();
+
+  if (searchTerm) {
+    // Treat %, _, / like literal search characters
+    const escapedTerm = searchTerm.replace(/[\\%_]/g, '\\$&');
+
+    products.andWhere(
+      '(product.productName ILIKE :search OR product.brand ILIKE :search)',
+      { search: '%&{escapedTerm}%' },
+    );
+  }
+
+  return products
+    .orderBy('product.productName', 'ASC')
+    .addOrderBy('product.productId', 'ASC')
+    .take(limit)
+    .skip(offset)
+    .getMany();
 };
 
 export const getIngredientProductByIdService = async (
   productId: string,
 ): Promise<IngredientProduct> => {
-  const ingredientProduct = await ingredientProductRepository.findOneBy({
+  const product = await ingredientProductRepository.findOneBy({
     productId,
   });
 
-  if (!ingredientProduct) {
+  if (!product) {
     throw new HttpError(404, 'Product not found.');
   }
 
-  return ingredientProduct;
+  return product;
 };
 
 export const createIngredientProductService = async (
@@ -42,6 +75,20 @@ export const createIngredientProductService = async (
   });
 
   return ingredientProductRepository.save(ingredientProduct);
+};
+
+export const getIngredientProductByUpc = async (
+  upc: string,
+): Promise<IngredientProduct> => {
+  const product = await ingredientProductRepository.findOneBy({
+    upc: upc.trim(),
+  });
+
+  if (!product) {
+    throw new HttpError(404, 'Product not found.');
+  }
+
+  return product;
 };
 
 export const updateIngredientProductService = async (

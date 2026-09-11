@@ -1,13 +1,11 @@
-import {
-  ingredientRepository,
-  type IngredientRow,
-} from '../repositories/ingredient.repo';
+import { ingredientRepository } from '../repositories/ingredient.repo';
 import { Ingredient } from '../entities/Ingredient';
 import {
   CreateIngredientInput,
   UpdateIngredientInput,
 } from '../schemas/ingredient.schema';
-import { HttpError } from '../utils/httpError';
+import { HttpError } from '../middleware/errorHandling/utils';
+import { IngredientRow } from './service_utils';
 
 export const getIngredientsService = async (): Promise<Ingredient[]> => {
   return ingredientRepository.find({

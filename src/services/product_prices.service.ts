@@ -4,7 +4,7 @@ import {
   CreateProductPriceInput,
   UpdateProductPriceInput,
 } from '../schemas/product_prices.schema';
-import { HttpError } from '../utils/httpError';
+import { HttpError } from '../middleware/errorHandling/utils';
 export const getProductPricesService = async (): Promise<ProductPrice[]> => {
   return productPriceRepository.find({
     order: { productId: 'ASC' },

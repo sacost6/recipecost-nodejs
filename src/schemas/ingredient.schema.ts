@@ -4,7 +4,7 @@ import {
   positiveIntegerSchema,
   stringSchema,
   positiveBigintIdSchema,
-} from './utils';
+} from './schema_utils';
 
 const createIngredientBodySchema = z.strictObject({
   name: stringSchema.min(1, 'Name is required').max(100),

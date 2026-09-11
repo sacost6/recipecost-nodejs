@@ -4,7 +4,7 @@ import {
   positiveDecimal12_4Schema,
   positiveSmallintSchema,
   stringSchema,
-} from './utils';
+} from './schema_utils';
 
 const createIngredientProductBodySchema = z.strictObject({
   ingredientId: positiveBigintIdSchema,

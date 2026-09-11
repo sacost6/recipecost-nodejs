@@ -3,7 +3,7 @@ import {
   currencyCodeSchema,
   positiveBigintIdSchema,
   nonnegativeDecimal12_2Schema,
-} from './utils';
+} from './schema_utils';
 
 const createProductPriceBodySchema = z.strictObject({
   productId: positiveBigintIdSchema,
