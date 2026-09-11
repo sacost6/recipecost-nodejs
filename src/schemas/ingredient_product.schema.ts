@@ -41,7 +41,7 @@ const queryIntegerSchema = z
 const ingredientProductQuerySchema = z.strictObject({
   ingredientId: positiveBigintIdSchema.optional(),
   query: stringSchema.max(150).optional(),
-  brand: stringSchema.max(100).optional,
+  brand: stringSchema.max(100).optional(),
 
   limit: queryIntegerSchema.pipe(z.number().min(1).max(100)).default(25),
 
