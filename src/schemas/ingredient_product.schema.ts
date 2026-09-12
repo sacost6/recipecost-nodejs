@@ -38,7 +38,7 @@ const ingredientProductQuerySchema = z.strictObject({
   offset: queryIntegerSchema.default(0),
 });
 
-export const ListIngredientProductSchema = z.object({
+export const listIngredientProductSchema = z.object({
   query: ingredientProductQuerySchema,
 });
 
