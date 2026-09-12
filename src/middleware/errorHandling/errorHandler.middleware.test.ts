@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { QueryFailedError } from 'typeorm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HttpError } from './ error';
+import { HttpError } from './error';
 import { errorHandler } from './errorHandler.middleware';
 
 const { logError, serializedLogs } = vi.hoisted(() => ({
@@ -174,17 +174,22 @@ describe('errorHandler HTTP errors', () => {
 });
 
 describe('errorHandler PostgreSQL constraint errors', () => {
-  it('translates the ingredient-name unique constraint into a specific 409', () => {
-    const { status, json } = invoke(
-      databaseFailure('23505', 'uq_ingredients_name'),
-    );
+  it.each([
+    'uq_ingredients_name',
+    'uq_ingredients_shared_name',
+    'uq_ingredients_private_name',
+  ])(
+    'translates ingredient-name constraint %s into a specific 409',
+    (constraint) => {
+      const { status, json } = invoke(databaseFailure('23505', constraint));
 
-    expect(status).toHaveBeenCalledExactlyOnceWith(409);
-    expect(json).toHaveBeenCalledExactlyOnceWith({
-      status: 'error',
-      message: 'An ingredient with this name already exists.',
-    });
-  });
+      expect(status).toHaveBeenCalledExactlyOnceWith(409);
+      expect(json).toHaveBeenCalledExactlyOnceWith({
+        status: 'error',
+        message: 'An ingredient with this name already exists.',
+      });
+    },
+  );
 
   it.each(['uq_some_other_record', undefined])(
     'returns a clean generic conflict for unique constraint %s',

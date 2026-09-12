@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
-import { HttpError } from './errorHandling/ error';
+import { HttpError } from './errorHandling/error';
 import { requireAuth } from './requireAuth.middleware';
 
 describe('requireAuth', () => {

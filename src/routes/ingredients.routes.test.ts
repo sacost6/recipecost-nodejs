@@ -1,10 +1,21 @@
+import type { Request, Response, NextFunction } from 'express';
+import { metadataSource } from '../test-utils/entityMetadata';
 import request from 'supertest';
-import { QueryFailedError } from 'typeorm';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryFailedError, IsNull } from 'typeorm';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { Ingredient } from '../entities/Ingredient';
-import type { IngredientRow } from '../services/ingredients.service';
+import type { IngredientRow } from '../services/utils/databaseRowTypes';
 import { app } from '../app';
 
+const session = vi.hoisted(() => ({ userId: undefined as string | undefined }));
 const repository = vi.hoisted(() => ({
   find: vi.fn(),
   findOneBy: vi.fn(),
@@ -31,13 +42,26 @@ vi.mock('./ingredient_products.routes', async () => {
   return { ingredientProductRoutes: Router() };
 });
 vi.mock('../middleware/session.middleware', () => ({
-  sessionMiddleware: (_req: unknown, _res: unknown, next: () => void) => next(),
+  sessionMiddleware: (req: Request, _res: Response, next: NextFunction) => {
+    req.session = { userId: session.userId } as Request['session'];
+    next();
+  },
 }));
 vi.mock('../middleware/logging.middleware', async () => {
   const { default: pino } = await import('pino');
   return { logger: pino({ level: 'silent' }) };
 });
 
+const source = metadataSource();
+beforeAll(async () => {
+  await source.prepareMetadata();
+  const real = source.getRepository(Ingredient);
+  Object.defineProperties(repository, {
+    metadata: { get: () => real.metadata },
+    manager: { get: () => real.manager },
+  });
+});
+const userId = '9007199254740994';
 const ingredientId = '9007199254740993';
 const createdAt = new Date('2026-01-02T03:04:05.000Z');
 const updatedAt = new Date('2026-01-03T04:05:06.000Z');
@@ -45,6 +69,7 @@ const updatedAt = new Date('2026-01-03T04:05:06.000Z');
 const ingredient = (overrides: Partial<Ingredient> = {}): Ingredient =>
   Object.assign(new Ingredient(), {
     ingredientId,
+    userId,
     name: 'Flour',
     categoryId: 3,
     description: 'Unbleached flour',
@@ -58,6 +83,7 @@ const returnedRow = (
   overrides: Partial<IngredientRow> = {},
 ): IngredientRow => ({
   ingredient_id: ingredientId,
+  user_id: userId,
   category_id: 3,
   name: 'Bread flour',
   description: 'Unbleached flour',
@@ -69,6 +95,7 @@ const returnedRow = (
 
 const jsonIngredient = (value: Ingredient) => ({
   ingredientId: value.ingredientId,
+  userId: value.userId,
   categoryId: value.categoryId,
   name: value.name,
   description: value.description,
@@ -104,9 +131,15 @@ const validBody = (method: string) =>
 describe('ingredients API (repository mocked)', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    session.userId = userId;
     vi.stubEnv('NODE_ENV', 'test');
     repository.find.mockResolvedValue([]);
-    repository.findOneBy.mockResolvedValue(null);
+    repository.findOneBy.mockImplementation(
+      async (conditions: { ingredientId: string }[]) =>
+        conditions.some((c) => c.ingredientId === ingredientId)
+          ? ingredient()
+          : null,
+    );
     repository.create.mockImplementation((values: Partial<Ingredient>) =>
       Object.assign(new Ingredient(), values),
     );
@@ -145,7 +178,10 @@ describe('ingredients API (repository mocked)', () => {
         status: 'success',
         data: [jsonIngredient(flour), jsonIngredient(salt)],
       });
-      expect(repository.find).toHaveBeenCalledWith({ order: { name: 'ASC' } });
+      expect(repository.find).toHaveBeenCalledWith({
+        where: [{ userId: IsNull() }, { userId }],
+        order: { name: 'ASC' },
+      });
     });
   });
 
@@ -161,7 +197,10 @@ describe('ingredients API (repository mocked)', () => {
           status: 'success',
           data: jsonIngredient(stored),
         });
-        expect(repository.findOneBy).toHaveBeenCalledWith({ ingredientId: id });
+        expect(repository.findOneBy).toHaveBeenCalledWith([
+          { ingredientId: id, userId: IsNull() },
+          { ingredientId: id, userId },
+        ]);
       },
     );
 
@@ -171,7 +210,10 @@ describe('ingredients API (repository mocked)', () => {
         `/api/ingredients/${encodeURIComponent(` ${ingredientId} `)}`,
       );
       expect(response.status).toBe(200);
-      expect(repository.findOneBy).toHaveBeenCalledWith({ ingredientId });
+      expect(repository.findOneBy).toHaveBeenCalledWith([
+        { ingredientId, userId: IsNull() },
+        { ingredientId, userId },
+      ]);
     });
 
     it('returns a JSON 404 for a valid ID that does not exist', async () => {
@@ -317,7 +359,7 @@ describe('ingredients API (repository mocked)', () => {
         .send({ name: '  Bread flour  ', version: 7 });
       expect(response.status).toBe(200);
       expect(repository.update).toHaveBeenCalledWith(
-        { ingredientId, version: 7 },
+        { ingredientId, userId, version: 7 },
         { name: 'Bread flour' },
         { returning: '*' },
       );
@@ -328,7 +370,7 @@ describe('ingredients API (repository mocked)', () => {
         ),
       });
       expect(response.body.data).not.toHaveProperty('ingredient_id');
-      expect(repository.findOneBy).not.toHaveBeenCalled();
+      expect(repository.findOneBy).toHaveBeenCalledTimes(1);
       expect(repository.existsBy).not.toHaveBeenCalled();
       expect(repository.save).not.toHaveBeenCalled();
     });
@@ -354,7 +396,7 @@ describe('ingredients API (repository mocked)', () => {
           .send({ [field]: value, version: 7 });
         expect(response.status).toBe(200);
         expect(repository.update).toHaveBeenCalledWith(
-          { ingredientId, version: 7 },
+          { ingredientId, userId, version: 7 },
           { [field]: value },
           { returning: '*' },
         );
@@ -378,7 +420,7 @@ describe('ingredients API (repository mocked)', () => {
       });
       expect(response.status).toBe(200);
       expect(repository.update).toHaveBeenCalledWith(
-        { ingredientId, version: 7 },
+        { ingredientId, userId, version: 7 },
         {
           name: 'Bread flour',
           categoryId: null,
@@ -397,9 +439,12 @@ describe('ingredients API (repository mocked)', () => {
       expect(response.status).toBe(409);
       expect(response.body).toEqual({
         status: 'error',
-        message: 'This ingredient has changed. Reload it before saving again.',
+        message: 'Ingredient has changed. Reload it before saving again.',
       });
-      expect(repository.existsBy).toHaveBeenCalledWith({ ingredientId });
+      expect(repository.existsBy).toHaveBeenCalledWith({
+        ingredientId,
+        userId,
+      });
       expect(repository.update).toHaveBeenCalledTimes(1);
       expect(repository.save).not.toHaveBeenCalled();
       expect(repository.create).not.toHaveBeenCalled();
@@ -413,7 +458,7 @@ describe('ingredients API (repository mocked)', () => {
       expect(response.status).toBe(404);
       expect(response.body).toEqual({
         status: 'error',
-        message: 'Ingredient not found',
+        message: 'Ingredient not found.',
       });
       expect(repository.create).not.toHaveBeenCalled();
       expect(repository.save).not.toHaveBeenCalled();
@@ -451,7 +496,7 @@ describe('ingredients API (repository mocked)', () => {
       const response = await request(app).delete(endpoint('delete'));
       expect(response.status).toBe(204);
       expect(response.text).toBe('');
-      expect(repository.delete).toHaveBeenCalledWith({ ingredientId });
+      expect(repository.delete).toHaveBeenCalledWith({ ingredientId, userId });
       expect(repository.findOneBy).not.toHaveBeenCalled();
     });
 

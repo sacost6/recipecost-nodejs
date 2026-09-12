@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { IngredientProduct } from '../entities/IngredientProduct';
+import { metadataSource } from '../test-utils/entityMetadata';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpError } from '../middleware/errorHandling/error';
 import {
   createIngredientProductService,
@@ -14,9 +16,23 @@ const repository = vi.hoisted(() => ({
   save: vi.fn(),
   findOneBy: vi.fn(),
   update: vi.fn(),
+  existsBy: vi.fn(),
   delete: vi.fn(),
   createQueryBuilder: vi.fn(),
 }));
+const ingredientLookup = vi.hoisted(() => vi.fn());
+vi.mock('./ingredients.service', () => ({
+  getIngredientByIdService: ingredientLookup,
+}));
+const source = metadataSource();
+beforeAll(async () => {
+  await source.prepareMetadata();
+  const real = source.getRepository(IngredientProduct);
+  Object.defineProperties(repository, {
+    metadata: { get: () => real.metadata },
+    manager: { get: () => real.manager },
+  });
+});
 const query = vi.hoisted(() => ({
   where: vi.fn(),
   andWhere: vi.fn(),
@@ -40,14 +56,41 @@ const input = {
   productName: 'Bread flour',
   packageQuantity: '500.0000',
 };
-const product = { ...input, userId, productId, brand: null, upc: null };
+const product = {
+  ...input,
+  userId,
+  productId,
+  brand: null,
+  upc: null,
+  version: 4,
+  createdAt: new Date('2026-01-01'),
+  updatedAt: new Date('2026-01-02'),
+};
+const patch = { ingredientId: input.ingredientId, version: 3 };
+const row = {
+  product_id: productId,
+  ingredient_id: input.ingredientId,
+  package_unit_id: 1,
+  product_name: input.productName,
+  package_quantity: input.packageQuantity,
+  user_id: userId,
+  brand: null,
+  upc: null,
+  version: 4,
+  created_at: product.createdAt,
+  updated_at: product.updatedAt,
+};
 
 beforeEach(() => {
   vi.resetAllMocks();
-  repository.create.mockImplementation((values) => values);
+  repository.create.mockImplementation((values) =>
+    source.getRepository(IngredientProduct).create(values ?? {}),
+  );
+  ingredientLookup.mockResolvedValue({ ingredientId: input.ingredientId });
   repository.save.mockResolvedValue(product);
   repository.findOneBy.mockResolvedValue(product);
-  repository.update.mockResolvedValue({ affected: 1 });
+  repository.update.mockResolvedValue({ affected: 1, raw: [row] });
+  repository.existsBy.mockResolvedValue(false);
   repository.delete.mockResolvedValue({ affected: 1 });
   repository.createQueryBuilder.mockReturnValue(query);
   query.where.mockReturnValue(query);
@@ -213,56 +256,104 @@ describe('createIngredientProductService', () => {
 });
 
 describe('updateIngredientProductService', () => {
-  it('scopes the write and refreshed read to the owner and excludes ownership or identity changes', async () => {
+  it('matches owner and expected version atomically and returns the written row without a reread', async () => {
+    repository.findOneBy.mockResolvedValue({ ...product, version: 99 });
     const uncheckedInput = {
+      ...patch,
       productName: 'Strong flour',
-      userId: 'forged-owner',
-      user: { userId: 'forged-relation-owner' },
-      productId: 'forged-product',
-      createdAt: new Date('2000-01-01'),
+      userId: 'forged',
+      user: { userId: 'forged' },
+      productId: 'forged',
+      createdAt: new Date(0),
     };
-
-    await expect(
-      updateIngredientProductService(userId, productId, uncheckedInput),
-    ).resolves.toBe(product);
-
-    const [criteria, changes] = repository.update.mock.calls[0];
-    expect(criteria).toEqual({ userId, productId });
-    expect(changes).toMatchObject({ productName: 'Strong flour' });
-    for (const field of ['userId', 'user', 'productId', 'createdAt']) {
-      expect(changes).not.toHaveProperty(field);
-    }
-    expect(repository.findOneBy).toHaveBeenCalledExactlyOnceWith({
+    const updated = await updateIngredientProductService(
       userId,
       productId,
+      uncheckedInput,
+    );
+    expect(updated).toBeInstanceOf(IngredientProduct);
+    expect(updated).toEqual(product);
+    const [criteria, changes, options] = repository.update.mock.calls[0];
+    expect(criteria).toEqual({ productId, userId, version: 3 });
+    expect(options).toEqual({ returning: '*' });
+    expect(changes).toMatchObject({
+      productName: 'Strong flour',
+      ingredientId: input.ingredientId,
     });
+    for (const field of ['version', 'userId', 'user', 'productId', 'createdAt'])
+      expect(changes).not.toHaveProperty(field);
+    expect(repository.findOneBy).not.toHaveBeenCalled();
+    expect(repository.existsBy).not.toHaveBeenCalled();
+    expect(ingredientLookup).toHaveBeenCalledExactlyOnceWith(
+      userId,
+      input.ingredientId,
+    );
   });
 
-  it('sends explicit nulls for cleared optional fields while leaving omitted fields undefined', async () => {
+  it('preserves explicit nulls and leaves omitted optional fields undefined', async () => {
     await updateIngredientProductService(userId, productId, {
+      ...patch,
       brand: null,
       upc: null,
     });
-
     const changes = repository.update.mock.calls[0][1];
-    expect(changes.brand).toBeNull();
-    expect(changes.upc).toBeNull();
+    expect(changes).toMatchObject({
+      ingredientId: input.ingredientId,
+      brand: null,
+      upc: null,
+    });
     expect(changes.productName).toBeUndefined();
     expect(changes.packageQuantity).toBeUndefined();
-    expect(changes.ingredientId).toBeUndefined();
     expect(changes.packageUnitId).toBeUndefined();
   });
 
-  it('returns 404 for a scoped write miss without reading another owner’s product', async () => {
-    repository.update.mockResolvedValue({ affected: 0 });
+  it.each([
+    { found: false, status: 404 },
+    { found: true, status: 409 },
+  ])(
+    'returns $status for an empty returned row using owner-scoped existence',
+    async ({ found, status }) => {
+      repository.update.mockResolvedValue({ affected: 0, raw: [] });
+      repository.existsBy.mockResolvedValue(found);
+      await expect(
+        updateIngredientProductService(userId, productId, patch),
+      ).rejects.toMatchObject({ statusCode: status });
+      expect(repository.existsBy).toHaveBeenCalledExactlyOnceWith({
+        productId,
+        userId,
+      });
+      expect(repository.create).not.toHaveBeenCalled();
+      expect(repository.findOneBy).not.toHaveBeenCalled();
+      expect(repository.save).not.toHaveBeenCalled();
+    },
+  );
 
+  it('propagates failure of the post-update existence check', async () => {
+    const error = new Error('database unavailable');
+    repository.update.mockResolvedValue({ affected: 0, raw: [] });
+    repository.existsBy.mockRejectedValue(error);
     await expect(
-      updateIngredientProductService(userId, productId, { brand: null }),
-    ).rejects.toEqual(new HttpError(404, 'Product not found.'));
-
-    expect(repository.findOneBy).not.toHaveBeenCalled();
-    expect(repository.save).not.toHaveBeenCalled();
+      updateIngredientProductService(userId, productId, patch),
+    ).rejects.toBe(error);
   });
+});
+
+describe('ingredient visibility before product writes', () => {
+  it.each(['create', 'update'] as const)(
+    'prevents %s when the ingredient is inaccessible',
+    async (operation) => {
+      const error = new HttpError(404, 'Ingredient not found');
+      ingredientLookup.mockRejectedValue(error);
+      const pending =
+        operation === 'create'
+          ? createIngredientProductService(userId, input)
+          : updateIngredientProductService(userId, productId, patch);
+      await expect(pending).rejects.toBe(error);
+      expect(repository.create).not.toHaveBeenCalled();
+      expect(repository.save).not.toHaveBeenCalled();
+      expect(repository.update).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe('deleteIngredientProductService', () => {
@@ -313,7 +404,10 @@ describe('product storage failures', () => {
       name: 'update',
       operation: repository.update,
       call: () =>
-        updateIngredientProductService(userId, productId, { brand: null }),
+        updateIngredientProductService(userId, productId, {
+          ...patch,
+          brand: null,
+        }),
     },
     {
       name: 'delete',

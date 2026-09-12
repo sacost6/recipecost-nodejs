@@ -6,7 +6,7 @@ import {
   ingredientParamsSchema,
   updateIngredientSchema,
 } from '../schemas/ingredient.schema';
-import { HttpError } from './errorHandling/ error';
+import { HttpError } from './errorHandling/error';
 import { validateRequest } from './validateRequest.middleware';
 
 const request = (parts: Partial<Request> = {}): Request =>
@@ -194,9 +194,12 @@ describe('validateRequest reusable schemas', () => {
     });
     const originalQuery = { term: '  FLOUR  ', page: '2', ignored: 'value' };
     const req = request({ query: originalQuery });
-    const next = validate(schema, req);
+    const next = vi.fn();
+    const res = { locals: {} } as Response;
+    validateRequest(schema)(req, res, next);
 
-    expect(req.query).toEqual({ term: 'flour', page: '2' });
+    expect(res.locals.query).toEqual({ term: 'flour', page: '2' });
+    expect(req.query).toBe(originalQuery);
     expect(originalQuery.term).toBe('  FLOUR  ');
     expect(next).toHaveBeenCalledExactlyOnceWith();
   });

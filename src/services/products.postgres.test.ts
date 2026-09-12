@@ -1,8 +1,10 @@
 /** Real repositories and services in an isolated, disposable PostgreSQL schema. */
 import 'reflect-metadata';
+import { setTimeout as delay } from 'node:timers/promises';
 import { randomUUID } from 'node:crypto';
 import {
   afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -69,6 +71,7 @@ import {
 const schema = `product_tests_${randomUUID().replaceAll('-', '')}`;
 const products = AppDataSource.getRepository(IngredientProduct);
 const prices = AppDataSource.getRepository(ProductPrice);
+afterEach(() => vi.restoreAllMocks());
 const missingId = '9223372036854775807';
 
 describe.skipIf(!database.url)(
@@ -254,6 +257,8 @@ describe.skipIf(!database.url)(
           update: () =>
             updateIngredientProductService(bob.userId, product.productId, {
               productName: 'Stolen',
+              ingredientId: product.ingredientId,
+              version: product.version,
             }),
           delete: () =>
             deleteIngredientProductService(bob.userId, product.productId),
@@ -276,6 +281,8 @@ describe.skipIf(!database.url)(
       ).rejects.toMatchObject({ statusCode: 404 });
       await expect(
         updateIngredientProductService(alice.userId, missingId, {
+          ingredientId: flour.ingredientId,
+          version: 1,
           brand: null,
         }),
       ).rejects.toMatchObject({ statusCode: 404 });
@@ -292,7 +299,11 @@ describe.skipIf(!database.url)(
       const renamed = await updateIngredientProductService(
         alice.userId,
         product.productId,
-        { productName: 'Bread flour' },
+        {
+          ingredientId: product.ingredientId,
+          version: product.version,
+          productName: 'Bread flour',
+        },
       );
       expect(renamed).toMatchObject({
         brand: 'Baker',
@@ -303,7 +314,12 @@ describe.skipIf(!database.url)(
       const cleared = await updateIngredientProductService(
         alice.userId,
         product.productId,
-        { brand: null, upc: null },
+        {
+          ingredientId: product.ingredientId,
+          version: renamed.version,
+          brand: null,
+          upc: null,
+        },
       );
       expect(cleared).toMatchObject({
         brand: null,
@@ -316,6 +332,8 @@ describe.skipIf(!database.url)(
     it('cannot transfer ownership or overwrite generated fields through a forged patch', async () => {
       const product = await createProduct();
       const forged = {
+        ingredientId: product.ingredientId,
+        version: product.version,
         productName: 'Renamed',
         userId: bob.userId,
         productId: missingId,
@@ -369,6 +387,8 @@ describe.skipIf(!database.url)(
       });
       await expect(
         updateIngredientProductService(alice.userId, other.productId, {
+          ingredientId: other.ingredientId,
+          version: other.version,
           upc: 'existing',
           productName: 'Must not persist',
         }),
@@ -511,6 +531,8 @@ describe.skipIf(!database.url)(
       expect(
         (
           await updateIngredientProductService(alice.userId, id, {
+            ingredientId: flour.ingredientId,
+            version: 1,
             brand: 'Acme',
           })
         ).productId,
@@ -519,21 +541,212 @@ describe.skipIf(!database.url)(
       expect(await products.count()).toBe(0);
     });
 
-    it.each(['owner', 'ingredient', 'unit'] as const)(
+    it.each(['owner', 'unit'] as const)(
       'enforces the %s foreign key independently of request validation',
       async (reference) => {
         await expect(
           createIngredientProductService(
             reference === 'owner' ? missingId : alice.userId,
             productInput({
-              ...(reference === 'ingredient'
-                ? { ingredientId: missingId }
-                : {}),
               ...(reference === 'unit' ? { packageUnitId: 32767 } : {}),
             }),
           ),
         ).rejects.toMatchObject({ driverError: { code: '23503' } });
         expect(await products.count()).toBe(0);
+      },
+    );
+
+    it('checks ingredient visibility before creating or reassigning a product', async () => {
+      const ingredients = AppDataSource.getRepository(Ingredient);
+      const privateIngredient = await ingredients.save(
+        ingredients.create({ name: 'Bob blend', userId: bob.userId }),
+      );
+      const own = await createProduct();
+      const before = await products.findOneByOrFail({
+        productId: own.productId,
+      });
+      await expect(
+        createProduct(alice, { ingredientId: privateIngredient.ingredientId }),
+      ).rejects.toMatchObject({ statusCode: 404 });
+      await expect(
+        updateIngredientProductService(alice.userId, own.productId, {
+          ingredientId: privateIngredient.ingredientId,
+          version: own.version,
+        }),
+      ).rejects.toMatchObject({ statusCode: 404 });
+      expect(
+        await products.findOneByOrFail({ productId: own.productId }),
+      ).toEqual(before);
+      const bobProduct = await createProduct(bob, {
+        ingredientId: privateIngredient.ingredientId,
+      });
+      expect(bobProduct.ingredientId).toBe(privateIngredient.ingredientId);
+      await expect(
+        createProduct(alice, { ingredientId: missingId }),
+      ).rejects.toMatchObject({ statusCode: 404 });
+    });
+
+    it('increments version once and rejects a stale retry without overwriting the winner', async () => {
+      const product = await createProduct();
+      const updated = await updateIngredientProductService(
+        alice.userId,
+        product.productId,
+        {
+          ingredientId: product.ingredientId,
+          version: product.version,
+          productName: 'Winner',
+        },
+      );
+      expect(updated).toBeInstanceOf(IngredientProduct);
+      expect(updated.version).toBe(product.version + 1);
+      await expect(
+        updateIngredientProductService(alice.userId, product.productId, {
+          ingredientId: product.ingredientId,
+          version: product.version,
+          productName: 'Stale',
+        }),
+      ).rejects.toMatchObject({ statusCode: 409 });
+      expect(
+        await products.findOneByOrFail({ productId: product.productId }),
+      ).toEqual(updated);
+    });
+
+    async function waitForProductUpdates(count: number) {
+      const deadline = Date.now() + 5000;
+      while (Date.now() < deadline) {
+        const [{ blocked }] = await AppDataSource.query(
+          `SELECT count(*)::int AS blocked FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE $1`,
+          [`%UPDATE "${schema}"."ingredient_products"%`],
+        );
+        if (blocked >= count) return;
+        await delay(20);
+      }
+      throw new Error(`Expected ${count} blocked product updates`);
+    }
+
+    it('allows exactly one winner when two versioned updates actually overlap', async () => {
+      const product = await createProduct();
+      const lock = AppDataSource.createQueryRunner();
+      await lock.connect();
+      await lock.startTransaction();
+      await lock.query(
+        `SELECT product_id FROM "${schema}"."ingredient_products" WHERE product_id = $1 FOR UPDATE`,
+        [product.productId],
+      );
+      const pending = Promise.allSettled(
+        ['First edit', 'Second edit'].map((productName) =>
+          updateIngredientProductService(alice.userId, product.productId, {
+            ingredientId: product.ingredientId,
+            version: product.version,
+            productName,
+          }),
+        ),
+      );
+      try {
+        await waitForProductUpdates(2);
+        await lock.commitTransaction();
+        const results = await pending;
+        const winners = results.filter(
+          (result) => result.status === 'fulfilled',
+        );
+        expect(winners).toHaveLength(1);
+        expect(
+          results.filter((result) => result.status === 'rejected'),
+        ).toEqual([
+          expect.objectContaining({
+            reason: expect.objectContaining({ statusCode: 409 }),
+          }),
+        ]);
+        if (winners[0].status !== 'fulfilled')
+          throw new Error('No winning update');
+        expect(winners[0].value.version).toBe(product.version + 1);
+        expect(
+          await products.findOneByOrFail({ productId: product.productId }),
+        ).toEqual(winners[0].value);
+      } finally {
+        if (lock.isTransactionActive) await lock.rollbackTransaction();
+        await lock.release();
+        await pending;
+      }
+    }, 15000);
+
+    it('returns 404 when a competing delete removes a product while its update is blocked', async () => {
+      const product = await createProduct();
+      const lock = AppDataSource.createQueryRunner();
+      await lock.connect();
+      await lock.startTransaction();
+      await lock.query(
+        `SELECT product_id FROM "${schema}"."ingredient_products" WHERE product_id = $1 FOR UPDATE`,
+        [product.productId],
+      );
+      const pending = Promise.allSettled([
+        updateIngredientProductService(alice.userId, product.productId, {
+          ingredientId: product.ingredientId,
+          version: product.version,
+          brand: 'Stale edit',
+        }),
+      ]);
+      try {
+        await waitForProductUpdates(1);
+        await lock.query(
+          `DELETE FROM "${schema}"."ingredient_products" WHERE product_id = $1`,
+          [product.productId],
+        );
+        await lock.commitTransaction();
+        expect(await pending).toEqual([
+          expect.objectContaining({
+            reason: expect.objectContaining({ statusCode: 404 }),
+          }),
+        ]);
+        expect(await products.existsBy({ productId: product.productId })).toBe(
+          false,
+        );
+      } finally {
+        if (lock.isTransactionActive) await lock.rollbackTransaction();
+        await lock.release();
+        await pending;
+      }
+    }, 15000);
+
+    it.each(['update', 'delete'] as const)(
+      'returns the written snapshot despite a subsequent %s',
+      async (operation) => {
+        const product = await createProduct();
+        const original = products.update.bind(products);
+        vi.spyOn(products, 'update').mockImplementationOnce(async (...args) => {
+          const result = await original(...args);
+          if (operation === 'update') {
+            await AppDataSource.query(
+              `UPDATE "${schema}"."ingredient_products" SET product_name = 'Later edit', version = version + 1 WHERE product_id = $1`,
+              [product.productId],
+            );
+          } else {
+            await products.delete({ productId: product.productId });
+          }
+          return result;
+        });
+        const updated = await updateIngredientProductService(
+          alice.userId,
+          product.productId,
+          {
+            ingredientId: product.ingredientId,
+            version: product.version,
+            productName: 'My edit',
+          },
+        );
+        expect(updated).toMatchObject({
+          productName: 'My edit',
+          version: product.version + 1,
+        });
+        const stored = await products.findOneBy({
+          productId: product.productId,
+        });
+        if (operation === 'update')
+          expect(stored).toMatchObject({
+            productName: 'Later edit',
+            version: product.version + 2,
+          });
+        else expect(stored).toBeNull();
       },
     );
 

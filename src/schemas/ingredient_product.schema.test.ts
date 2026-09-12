@@ -178,76 +178,63 @@ describe('ingredientProductParams', () => {
 });
 
 describe('updateIngredientProductSchema', () => {
-  it('preserves a name-only patch without adding omitted fields', () => {
+  const required = { ingredientId: body.ingredientId, version: 3 };
+  it('allows changing just the ingredient association with an expected version', () => {
+    expect(
+      updateIngredientProductSchema.parse({ params, body: required }),
+    ).toEqual({ params, body: required });
+  });
+  it('trims an edited name without supplying other optional fields', () => {
     expect(
       updateIngredientProductSchema.parse({
         params,
-        body: { productName: ' Strong bread flour ' },
+        body: { ...required, productName: ' Flour ' },
       }),
-    ).toEqual({ params, body: { productName: 'Strong bread flour' } });
+    ).toEqual({ params, body: { ...required, productName: 'Flour' } });
   });
-
   it.each(['brand', 'upc'])(
-    'accepts clearing %s as the only change',
+    'allows clearing %s alongside required fields',
     (field) => {
       expect(
         updateIngredientProductSchema.parse({
           params,
-          body: { [field]: null },
-        }),
-      ).toEqual({ params, body: { [field]: null } });
+          body: { ...required, [field]: null },
+        }).body,
+      ).toEqual({ ...required, [field]: null });
     },
   );
-
-  it.each([{}, { brand: undefined, productName: undefined }])(
-    'rejects an empty patch %j',
-    (patch) => {
-      const result = updateIngredientProductSchema.safeParse({
-        params,
-        body: patch,
-      });
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.issues).toContainEqual(
-          expect.objectContaining({
-            path: ['body'],
-            message:
-              'At least one field is required to update an ingredient product.',
-          }),
-        );
-      }
-    },
-  );
-
-  it('retains create-time validation for edited fields and validates the product ID', () => {
-    for (const patch of [
-      { productName: ' ' },
-      { packageQuantity: '0' },
-      { packageUnitId: 0 },
-      { ingredientId: '0' },
-      { productName: null },
-      { upc: 123 },
-    ]) {
-      expect(
-        updateIngredientProductSchema.safeParse({ params, body: patch })
-          .success,
-      ).toBe(false);
-    }
+  it.each([
+    {},
+    { ingredientId: body.ingredientId },
+    { version: 3 },
+    { ...required, version: 0 },
+    { ...required, version: '3' },
+    { ...required, version: 1.5 },
+    { ...required, version: 2147483648 },
+    { ...required, ingredientId: '0' },
+    { ...required, productName: ' ' },
+    { ...required, packageQuantity: '0' },
+    { ...required, packageUnitId: 0 },
+  ])('rejects invalid patch %j', (patch) => {
+    expect(
+      updateIngredientProductSchema.safeParse({ params, body: patch }).success,
+    ).toBe(false);
+  });
+  it('validates the product ID', () => {
     expect(
       updateIngredientProductSchema.safeParse({
         params: { productId: '0' },
-        body: { brand: null },
+        body: required,
       }).success,
     ).toBe(false);
   });
-
   it.each(['userId', 'user', 'productId', 'prices'])(
-    'rejects changing %s even alongside a valid edit',
+    'rejects forged %s with otherwise valid input',
     (field) => {
       expect(
         updateIngredientProductSchema.safeParse({
           params,
-          body: { productName: 'Flour', [field]: 'forged' },
+          body: { ...required, [field]: 'forged' },
         }).success,
       ).toBe(false);
     },

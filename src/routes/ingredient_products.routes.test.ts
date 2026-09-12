@@ -1,7 +1,17 @@
+import { IngredientProduct } from '../entities/IngredientProduct';
+import { metadataSource } from '../test-utils/entityMetadata';
 import type { Request, Response, NextFunction } from 'express';
 import request from 'supertest';
 import { QueryFailedError } from 'typeorm';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { app } from '../app';
 
 const repository = vi.hoisted(() => ({
@@ -9,9 +19,23 @@ const repository = vi.hoisted(() => ({
   save: vi.fn(),
   findOneBy: vi.fn(),
   update: vi.fn(),
+  existsBy: vi.fn(),
   delete: vi.fn(),
   createQueryBuilder: vi.fn(),
 }));
+const ingredients = vi.hoisted(() => ({ findOneBy: vi.fn() }));
+vi.mock('../repositories/ingredient.repo', () => ({
+  ingredientRepository: ingredients,
+}));
+const source = metadataSource();
+beforeAll(async () => {
+  await source.prepareMetadata();
+  const real = source.getRepository(IngredientProduct);
+  Object.defineProperties(repository, {
+    metadata: { get: () => real.metadata },
+    manager: { get: () => real.manager },
+  });
+});
 const query = vi.hoisted(() => ({
   where: vi.fn(),
   andWhere: vi.fn(),
@@ -58,19 +82,45 @@ const input = {
   productName: 'Bread flour',
   packageQuantity: '500.0000',
 };
-const product = { ...input, productId, userId: aliceId, upc, brand: null };
+const product = {
+  ...input,
+  productId,
+  userId: aliceId,
+  upc,
+  brand: null,
+  version: 1,
+};
+const patch = { ingredientId: input.ingredientId, version: 1 };
+const rawProduct = (value: typeof product) => ({
+  product_id: value.productId,
+  ingredient_id: value.ingredientId,
+  package_unit_id: value.packageUnitId,
+  product_name: value.productName,
+  package_quantity: value.packageQuantity,
+  user_id: value.userId,
+  brand: value.brand,
+  upc: value.upc,
+  version: value.version,
+});
 const bobProduct = { ...product, productId: '9007199254740996', userId: bobId };
-const stored = [product, bobProduct];
-type Criteria = { userId: string; productId?: string; upc?: string };
+let stored = [product, bobProduct];
+type Criteria = {
+  userId: string;
+  productId?: string;
+  upc?: string;
+  version?: number;
+};
 const findOwned = (criteria: Criteria) =>
   stored.find(
     (row) =>
       row.userId === criteria.userId &&
       (criteria.productId === undefined ||
         row.productId === criteria.productId) &&
-      (criteria.upc === undefined || row.upc === criteria.upc),
+      (criteria.upc === undefined || row.upc === criteria.upc) &&
+      (criteria.version === undefined || row.version === criteria.version),
   );
 const noStorageCalls = () => {
+  expect(ingredients.findOneBy).not.toHaveBeenCalled();
   for (const operation of Object.values(repository))
     expect(operation).not.toHaveBeenCalled();
 };
@@ -92,7 +142,7 @@ const endpoints = [
   {
     method: 'patch',
     path: `/${productId}`,
-    body: { brand: null },
+    body: { ...patch, brand: null },
     operation: 'update',
   },
   {
@@ -107,17 +157,44 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.stubEnv('NODE_ENV', 'test');
   session.userId = aliceId;
-  repository.create.mockImplementation((values) => ({ ...values }));
+  stored = [{ ...product }, { ...bobProduct }];
+  ingredients.findOneBy.mockImplementation(
+    async (conditions: { ingredientId: string }[]) =>
+      conditions.some((c) => c.ingredientId === input.ingredientId)
+        ? { ingredientId: input.ingredientId, userId: null }
+        : null,
+  );
+  repository.create.mockImplementation((values) =>
+    source.getRepository(IngredientProduct).create(values ?? {}),
+  );
   repository.save.mockImplementation(async (values) => ({
     ...values,
     productId,
+    version: 1,
   }));
   repository.findOneBy.mockImplementation(
     async (criteria: Criteria) => findOwned(criteria) ?? null,
   );
-  repository.update.mockImplementation(async (criteria: Criteria) => ({
-    affected: findOwned(criteria) ? 1 : 0,
-  }));
+  repository.existsBy.mockImplementation(
+    async (criteria: Criteria) => !!findOwned(criteria),
+  );
+  repository.update.mockImplementation(
+    async (criteria: Criteria, changes: Partial<typeof product>) => {
+      const current = findOwned(criteria);
+      if (!current) return { affected: 0, raw: [] };
+      const updated = {
+        ...current,
+        ...Object.fromEntries(
+          Object.entries(changes).filter(([, v]) => v !== undefined),
+        ),
+        version: current.version + 1,
+      };
+      stored = stored.map((row) =>
+        row.productId === current.productId ? updated : row,
+      );
+      return { affected: 1, raw: [rawProduct(updated)] };
+    },
+  );
   repository.delete.mockImplementation(async (criteria: Criteria) => ({
     affected: findOwned(criteria) ? 1 : 0,
   }));
@@ -295,29 +372,71 @@ describe('product writes and ownership', () => {
   });
 
   it('updates supplied fields, allows explicit null and returns the saved product', async () => {
-    const updated = { ...product, productName: 'New name', brand: null };
-    repository.findOneBy.mockResolvedValue(updated);
+    const updated = {
+      ...product,
+      productName: 'New name',
+      brand: null,
+      version: 2,
+    };
     const response = await request(app)
       .patch(`${base}/${productId}`)
-      .send({ productName: ' New name ', brand: null });
+      .send({ ...patch, productName: ' New name ', brand: null });
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ status: 'success', data: updated });
     expect(repository.update).toHaveBeenCalledExactlyOnceWith(
-      { userId: aliceId, productId },
+      { userId: aliceId, productId, version: 1 },
       {
-        ingredientId: undefined,
+        ingredientId: input.ingredientId,
         packageUnitId: undefined,
         brand: null,
         productName: 'New name',
         packageQuantity: undefined,
         upc: undefined,
       },
+      { returning: '*' },
     );
-    expect(repository.findOneBy).toHaveBeenCalledExactlyOnceWith({
+    expect(repository.findOneBy).not.toHaveBeenCalled();
+    expect(repository.existsBy).not.toHaveBeenCalled();
+  });
+
+  it('returns 409 for a stale version and preserves the successful update', async () => {
+    const winner = await request(app)
+      .patch(`${base}/${productId}`)
+      .send({ ...patch, productName: 'Winner' });
+    expect(winner.status).toBe(200);
+    expect(winner.body.data.version).toBe(2);
+
+    const stale = await request(app)
+      .patch(`${base}/${productId}`)
+      .send({ ...patch, productName: 'Stale edit' });
+    expect(stale.status).toBe(409);
+    expect(stale.body).toEqual({
+      status: 'error',
+      message: 'Ingredient Product has changed. Reload it before saving again.',
+    });
+    expect(repository.existsBy).toHaveBeenCalledExactlyOnceWith({
       userId: aliceId,
       productId,
     });
+    const current = await request(app).get(`${base}/${productId}`);
+    expect(current.status).toBe(200);
+    expect(current.body.data).toEqual(winner.body.data);
   });
+
+  it.each([
+    { ingredientId: input.ingredientId, productName: 'Missing version' },
+    { version: 1, productName: 'Missing ingredient' },
+    { ...patch, version: 0 },
+  ])(
+    'rejects an incomplete or invalid versioned patch before storage: %j',
+    async (body) => {
+      const response = await request(app)
+        .patch(`${base}/${productId}`)
+        .send(body);
+      expect(response.status).toBe(400);
+      noStorageCalls();
+    },
+  );
 
   it('deletes from the product repository and returns an empty 204', async () => {
     const response = await request(app).delete(`${base}/${productId}`);
@@ -334,7 +453,7 @@ describe('product writes and ownership', () => {
     async (method) => {
       const response = await request(app)
         [method](`${base}/not-an-id`)
-        .send({ brand: null });
+        .send({ ...patch, brand: null });
       expect(response.status).toBe(400);
       noStorageCalls();
     },
@@ -345,11 +464,14 @@ describe('product writes and ownership', () => {
     async (method) => {
       const response = await request(app)
         [method](`${base}/${bobProduct.productId}`)
-        .send({ brand: null });
+        .send({ ...patch, brand: null });
       expect(response.status).toBe(404);
       expect(response.body).toEqual({
         status: 'error',
-        message: 'Product not found.',
+        message:
+          method === 'patch'
+            ? 'Ingredient Product not found.'
+            : 'Product not found.',
       });
       const operation =
         method === 'get'
@@ -360,6 +482,7 @@ describe('product writes and ownership', () => {
       expect(operation.mock.calls[0][0]).toEqual({
         userId: aliceId,
         productId: bobProduct.productId,
+        ...(method === 'patch' ? { version: 1 } : {}),
       });
     },
   );

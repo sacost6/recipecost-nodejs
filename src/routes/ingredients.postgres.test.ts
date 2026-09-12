@@ -1,3 +1,4 @@
+import type { Request, Response, NextFunction } from 'express';
 /**
  * Real PostgreSQL integration tests. Every database operation uses PostgreSQL;
  * the response-race tests wrap an update only to schedule a second real write.
@@ -26,6 +27,8 @@ import {
   vi,
 } from 'vitest';
 
+const session = vi.hoisted(() => ({ userId: undefined as string | undefined }));
+
 vi.mock('../schemas/env.schema', () => ({
   env: {
     DATABASE_URL:
@@ -44,7 +47,10 @@ vi.mock('./auth.routes', async () => {
   return { authRoutes: Router() };
 });
 vi.mock('../middleware/session.middleware', () => ({
-  sessionMiddleware: (_req: unknown, _res: unknown, next: () => void) => next(),
+  sessionMiddleware: (req: Request, _res: Response, next: NextFunction) => {
+    req.session = { userId: session.userId } as Request['session'];
+    next();
+  },
 }));
 
 import { app } from '../app';
@@ -100,6 +106,14 @@ describe.skipIf(!testUrl)('ingredients API with real PostgreSQL', () => {
     await AppDataSource.query(
       `TRUNCATE TABLE ${ingredientsTable}, "${schema}"."ingredient_categories", "${schema}"."units", "${schema}"."users" RESTART IDENTITY CASCADE`,
     );
+    const users = AppDataSource.getRepository(User);
+    const owner = await users.save(
+      users.create({
+        email: 'ingredient-owner@example.com',
+        passwordHash: 'fixture-only',
+      }),
+    );
+    session.userId = owner.userId;
   });
 
   afterEach(() => {
@@ -122,6 +136,7 @@ describe.skipIf(!testUrl)('ingredients API with real PostgreSQL', () => {
     return ingredientRepository.save(
       ingredientRepository.create({
         name: 'Flour',
+        userId: session.userId,
         categoryId: null,
         description: 'Original description',
         ...overrides,
@@ -227,6 +242,7 @@ describe.skipIf(!testUrl)('ingredients API with real PostgreSQL', () => {
     expect(created.status).toBe(201);
     expect(created.body.data).toEqual({
       ingredientId: expect.any(String),
+      userId: session.userId,
       name: 'Flour',
       categoryId: null,
       description: null,
@@ -276,9 +292,9 @@ describe.skipIf(!testUrl)('ingredients API with real PostgreSQL', () => {
   it('preserves bigint identity precision through GET, PATCH, and DELETE', async () => {
     const ingredientId = '9007199254740993';
     await AppDataSource.query(
-      `INSERT INTO ${ingredientsTable} (ingredient_id, name)
-       OVERRIDING SYSTEM VALUE VALUES ($1, $2)`,
-      [ingredientId, 'Flour'],
+      `INSERT INTO ${ingredientsTable} (ingredient_id, name, user_id)
+       OVERRIDING SYSTEM VALUE VALUES ($1, $2, $3)`,
+      [ingredientId, 'Flour', session.userId],
     );
     const fetched = await request(app).get(`/api/ingredients/${ingredientId}`);
     expect(fetched.status).toBe(200);
@@ -448,6 +464,7 @@ describe.skipIf(!testUrl)('ingredients API with real PostgreSQL', () => {
         }),
       ).toMatchObject({
         name: 'Flour',
+        userId: session.userId,
         categoryId: null,
         description: 'Original description',
         version: 1,
@@ -660,7 +677,7 @@ describe.skipIf(!testUrl)('ingredients API with real PostgreSQL', () => {
   it('enforces database uniqueness independently of HTTP validation', async () => {
     await seedIngredient();
     await expect(seedIngredient()).rejects.toMatchObject({
-      driverError: { code: '23505', constraint: 'uq_ingredients_name' },
+      driverError: { code: '23505', constraint: 'uq_ingredients_private_name' },
     });
   });
 
