@@ -1,4 +1,4 @@
-import type { AppError, ErrorResponse, PostgresError } from './ error';
+import type { AppError, ErrorResponse, PostgresError } from './error';
 import type { ErrorRequestHandler } from 'express';
 import { logger } from '../logging.middleware';
 import { QueryFailedError } from 'typeorm';
@@ -30,7 +30,11 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
 
         if (databaseError.constraint === 'uq_users_email') {
           message = 'Email has already been registered.';
-        } else if (databaseError.constraint == 'uq_ingredients_name') {
+        } else if (
+          databaseError.constraint === 'uq_ingredients_name' ||
+          databaseError.constraint === 'uq_ingredients_shared_name' ||
+          databaseError.constraint === 'uq_ingredients_private_name'
+        ) {
           message = 'An ingredient with this name already exists.';
         } else {
           message = 'A record with these values already exists.';

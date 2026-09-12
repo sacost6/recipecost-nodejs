@@ -1,11 +1,14 @@
 import { ingredientProductRepository } from '../repositories/ingredient_products.repo';
 import { IngredientProduct } from '../entities/IngredientProduct';
+import { HttpError } from '../middleware/errorHandling/error';
+import { getIngredientByIdService } from './ingredients.service';
+import { IngredientProductRow } from './utils/databaseRowTypes';
+import { requireUpdatedRow } from './utils/requireUpdatedRow';
+import { entityFromRow } from './utils/entityFromRow';
 import {
   CreateIngredientProductInput,
   UpdateIngredientProductInput,
 } from '../schemas/ingredient_product.schema';
-import { HttpError } from '../middleware/errorHandling/error';
-import { getIngredientByIdService } from './ingredients.service';
 
 type IngredientProductFilters = {
   ingredientId?: string;
@@ -124,7 +127,7 @@ export const updateIngredientProductService = async (
 ): Promise<IngredientProduct> => {
   await getIngredientByIdService(userId, input.ingredientId);
   const result = await ingredientProductRepository.update(
-    { productId, userId },
+    { productId, userId, version: input.version },
     {
       ingredientId: input.ingredientId,
       packageUnitId: input.packageUnitId,
@@ -133,13 +136,16 @@ export const updateIngredientProductService = async (
       packageQuantity: input.packageQuantity,
       upc: input.upc,
     },
+    { returning: '*' },
   );
 
-  if (result.affected === 0) {
-    throw new HttpError(404, 'Product not found.');
-  }
+  const row = await requireUpdatedRow(
+    result.raw as IngredientProductRow[],
+    () => ingredientProductRepository.existsBy({ productId, userId }),
+    'Ingredient Product',
+  );
 
-  return getIngredientProductByIdService(userId, productId);
+  return entityFromRow(ingredientProductRepository, row);
 };
 
 export const deleteIngredientProductService = async (

@@ -28,6 +28,13 @@ Product and price coverage includes:
 - Strict request schemas, bigint IDs, decimal boundaries, currency normalization,
   and omitted versus explicitly null product updates.
 - Product ownership for create, read, UPC lookup, search, update, and delete.
+- Product updates require `ingredientId` and `version`; stale versions return
+  `409`, and missing or unowned products return `404`.
+- Shared or owned ingredient visibility for product creation and reassignment.
+- Real overlapping versioned updates, updates racing with deletion, and returned
+  rows remaining the writer's snapshot after a later update or deletion.
+- Row hydration using actual entity metadata, including custom column names and
+  value transformers, without opening a database connection.
 - Combined search filters, literal wildcard characters, stable pagination, and
   per-user UPC uniqueness, including concurrent creation.
 - Price ownership, chronological history, and updating or deleting one

@@ -1,22 +1,14 @@
 import { ingredientRepository } from '../repositories/ingredient.repo';
 import { Ingredient } from '../entities/Ingredient';
 import { IsNull } from 'typeorm';
+import { HttpError } from '../middleware/errorHandling/error';
+import { requireUpdatedRow } from './utils/requireUpdatedRow';
+import { entityFromRow } from './utils/entityFromRow';
+import { IngredientRow } from './utils/databaseRowTypes';
 import {
   CreateIngredientInput,
   UpdateIngredientInput,
 } from '../schemas/ingredient.schema';
-import { HttpError } from '../middleware/errorHandling/error';
-
-export type IngredientRow = {
-  ingredient_id: string;
-  category_id: number | null;
-  name: string;
-  description: string | null;
-  created_at: Date;
-  updated_at: Date;
-  version: number;
-  user_id: string | null;
-};
 
 export const getIngredientsService = async (
   userId: string,
@@ -70,40 +62,21 @@ export const updateIngredientService = async (
 ): Promise<Ingredient> => {
   const { version: expectedVersion, ...changes } = input;
 
+  await getIngredientByIdService(userId, ingredientId);
+
   const result = await ingredientRepository.update(
     { ingredientId, userId, version: expectedVersion },
     changes,
     { returning: '*' },
   );
 
-  const [row] = result.raw as IngredientRow[];
+  const row = await requireUpdatedRow(
+    result.raw as IngredientRow[],
+    () => ingredientRepository.existsBy({ ingredientId, userId }),
+    'Ingredient',
+  );
 
-  if (!row) {
-    const exists = await ingredientRepository.existsBy({
-      userId,
-      ingredientId,
-    });
-
-    if (!exists) {
-      throw new HttpError(404, 'Ingredient not found');
-    }
-
-    throw new HttpError(
-      409,
-      'This ingredient has changed. Reload it before saving again.',
-    );
-  }
-
-  return ingredientRepository.create({
-    ingredientId: row.ingredient_id,
-    categoryId: row.category_id,
-    name: row.name,
-    description: row.description,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    version: row.version,
-    userId: row.user_id,
-  });
+  return entityFromRow(ingredientRepository, row);
 };
 
 export const deleteIngredientService = async (
