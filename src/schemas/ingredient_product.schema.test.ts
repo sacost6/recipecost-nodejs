@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createIngredientProductSchema,
-  ingredientProductParamsSchema,
+  ingredientProductParams,
   updateIngredientProductSchema,
 } from './ingredient_product.schema';
 
@@ -158,10 +158,10 @@ describe('createIngredientProductSchema', () => {
   );
 });
 
-describe('ingredientProductParamsSchema', () => {
+describe('ingredientProductParams', () => {
   it('trims and preserves a bigint product ID', () => {
     expect(
-      ingredientProductParamsSchema.parse({
+      ingredientProductParams.parse({
         params: { productId: ` ${params.productId} ` },
       }),
     ).toEqual({ params });
@@ -171,8 +171,7 @@ describe('ingredientProductParamsSchema', () => {
     'rejects invalid product ID %j',
     (productId) => {
       expect(
-        ingredientProductParamsSchema.safeParse({ params: { productId } })
-          .success,
+        ingredientProductParams.safeParse({ params: { productId } }).success,
       ).toBe(false);
     },
   );

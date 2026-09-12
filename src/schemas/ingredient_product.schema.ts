@@ -21,16 +21,6 @@ const updateIngredientProductBodySchema = createIngredientProductBodySchema
     message: 'At least one field is required to update an ingredient product.',
   });
 
-export const createIngredientProductSchema = z.object({
-  body: createIngredientProductBodySchema,
-});
-
-export const ingredientProductParamsSchema = z.object({
-  params: z.object({
-    productId: positiveBigintIdSchema,
-  }),
-});
-
 const queryIntegerSchema = z
   .string()
   .trim()
@@ -48,18 +38,37 @@ const ingredientProductQuerySchema = z.strictObject({
   offset: queryIntegerSchema.default(0),
 });
 
-export const listIngredientProductSchema = z.object({
+export const ListIngredientProductSchema = z.object({
   query: ingredientProductQuerySchema,
 });
+
+export const createIngredientProductSchema = z.object({
+  body: createIngredientProductBodySchema,
+});
+
+export const ingredientProductParams = z.object({
+  params: z.object({
+    productId: positiveBigintIdSchema,
+  }),
+});
+
+export const ingredientProductUpcParams = z.object({
+  params: z.object({
+    upc: stringSchema.max(20),
+  }),
+});
+
+export const updateIngredientProductSchema = ingredientProductParams.extend({
+  body: updateIngredientProductBodySchema,
+});
+
+export type IngredientProductUpcParams = z.infer<
+  typeof ingredientProductUpcParams
+>['params'];
 
 export type ListIngredientProductsQuery = z.infer<
   typeof ingredientProductQuerySchema
 >;
-
-export const updateIngredientProductSchema =
-  ingredientProductParamsSchema.extend({
-    body: updateIngredientProductBodySchema,
-  });
 
 export type CreateIngredientProductInput = z.infer<
   typeof createIngredientProductBodySchema
@@ -69,6 +78,6 @@ export type UpdateIngredientProductInput = z.infer<
   typeof updateIngredientProductBodySchema
 >;
 
-export type IngredientProductParamsSchema = z.infer<
-  typeof ingredientProductParamsSchema
+export type IngredientProductParams = z.infer<
+  typeof ingredientProductParams
 >['params'];
