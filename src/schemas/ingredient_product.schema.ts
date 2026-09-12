@@ -2,6 +2,7 @@ import * as z from 'zod';
 import {
   positiveBigintIdSchema,
   positiveDecimal12_4Schema,
+  positiveIntegerSchema,
   positiveSmallintSchema,
   stringSchema,
 } from './common.schema';
@@ -17,9 +18,10 @@ const createIngredientProductBodySchema = z.strictObject({
 
 const updateIngredientProductBodySchema = createIngredientProductBodySchema
   .partial()
-  .refine((body) => Object.values(body).some((value) => value !== undefined), {
-    message: 'At least one field is required to update an ingredient product.',
-  });
+  .extend({
+    version: positiveIntegerSchema,
+  })
+  .required({ ingredientId: true });
 
 const queryIntegerSchema = z
   .string()

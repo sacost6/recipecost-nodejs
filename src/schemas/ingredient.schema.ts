@@ -18,10 +18,8 @@ const updateIngredientBodySchema = createIngredientBodySchema
     version: positiveIntegerSchema,
   })
   .refine(
-    (body) =>
-      body.name !== undefined ||
-      body.categoryId !== undefined ||
-      body.description !== undefined,
+    ({ version: _version, ...changes }) =>
+      Object.values(changes).some((value) => value !== undefined),
     {
       message: 'At least one field is required to update an ingredient',
     },

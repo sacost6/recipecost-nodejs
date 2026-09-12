@@ -10,6 +10,7 @@ import {
   Check,
   Unique,
   Index,
+  VersionColumn,
 } from 'typeorm';
 
 import { Ingredient } from './Ingredient';
@@ -76,6 +77,9 @@ export class IngredientProduct {
     type: 'bigint',
   })
   userId!: string;
+
+  @VersionColumn({ default: 1 })
+  version!: number;
 
   @ManyToOne(() => User, {
     nullable: false,

@@ -6,11 +6,12 @@ import {
   getIngredientsService,
   updateIngredientService,
 } from '../services/ingredients.service';
-
+import { requireUserId } from '../controllers/utils/auth';
 import { type IngredientParamsSchema } from '../schemas/ingredient.schema';
 
 export const getIngredients = async (req: Request, res: Response) => {
-  const ingredients = await getIngredientsService();
+  const userId = requireUserId(req);
+  const ingredients = await getIngredientsService(userId);
 
   res.status(200).json({
     status: 'success',
@@ -23,7 +24,9 @@ export const getIngredientsById = async (
   res: Response,
 ) => {
   const { ingredientId } = req.params;
-  const ingredient = await getIngredientByIdService(ingredientId);
+  const userId = requireUserId(req);
+
+  const ingredient = await getIngredientByIdService(userId, ingredientId);
 
   res.status(200).json({
     status: 'success',
@@ -33,7 +36,8 @@ export const getIngredientsById = async (
 
 export const createIngredient = async (req: Request, res: Response) => {
   const ingredientData = req.body;
-  const newIngredient = await createIngredientService(ingredientData);
+  const userId = requireUserId(req);
+  const newIngredient = await createIngredientService(userId, ingredientData);
 
   res.status(201).json({
     status: 'success',
@@ -47,7 +51,9 @@ export const updateIngredient = async (
 ) => {
   const { ingredientId } = req.params;
   const updateData = req.body;
+  const userId = requireUserId(req);
   const updatedIngredient = await updateIngredientService(
+    userId,
     ingredientId,
     updateData,
   );
@@ -63,7 +69,8 @@ export const deleteIngredient = async (
   res: Response,
 ) => {
   const { ingredientId } = req.params;
-  await deleteIngredientService(ingredientId);
+  const userId = requireUserId(req);
+  await deleteIngredientService(userId, ingredientId);
 
   res.status(204).send();
 };

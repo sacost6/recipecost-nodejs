@@ -1,7 +1,7 @@
 import * as argon2 from 'argon2';
 import { userRepository } from '../repositories/users.repo';
 import type { RegisterInput, LoginInput } from '../schemas/auth.schema';
-import { HttpError } from '../middleware/errorHandling/ error';
+import { HttpError } from '../middleware/errorHandling/error';
 
 export const registerService = async (input: RegisterInput) => {
   const user = userRepository.create({

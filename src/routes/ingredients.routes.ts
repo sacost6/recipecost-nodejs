@@ -1,5 +1,6 @@
 import { Router } from 'express';
-
+import { requireAuth } from '../middleware/requireAuth.middleware';
+import { validateRequest } from '../middleware/validateRequest.middleware';
 import {
   createIngredient,
   deleteIngredient,
@@ -7,9 +8,6 @@ import {
   getIngredients,
   updateIngredient,
 } from '../controllers/ingredients.controller';
-
-import { validateRequest } from '../middleware/validateRequest.middleware';
-
 import {
   createIngredientSchema,
   updateIngredientSchema,
@@ -17,6 +15,8 @@ import {
 } from '../schemas/ingredient.schema';
 
 export const ingredientRoutes = Router();
+
+ingredientRoutes.use(requireAuth);
 
 ingredientRoutes.get('/', getIngredients);
 

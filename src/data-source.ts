@@ -10,7 +10,7 @@ export const AppDataSource = new DataSource({
       ? { rejectUnauthorized: true }
       : { rejectUnauthorized: false },
   entities: ['src/entities/**/*.ts'],
-  migrations: ['src/migrations/**/*.ts'],
+  migrations: ['src/migrations/[0-9]*-*.ts'],
   synchronize: false,
   logging: ['error', 'warn'],
 });

@@ -4,7 +4,8 @@ import {
   CreateIngredientProductInput,
   UpdateIngredientProductInput,
 } from '../schemas/ingredient_product.schema';
-import { HttpError } from '../middleware/errorHandling/ error';
+import { HttpError } from '../middleware/errorHandling/error';
+import { getIngredientByIdService } from './ingredients.service';
 
 type IngredientProductFilters = {
   ingredientId?: string;
@@ -86,6 +87,7 @@ export const createIngredientProductService = async (
   userId: string,
   input: CreateIngredientProductInput,
 ): Promise<IngredientProduct> => {
+  await getIngredientByIdService(userId, input.ingredientId);
   const ingredientProduct = ingredientProductRepository.create({
     userId: userId,
     ingredientId: input.ingredientId,
@@ -120,6 +122,7 @@ export const updateIngredientProductService = async (
   productId: string,
   input: UpdateIngredientProductInput,
 ): Promise<IngredientProduct> => {
+  await getIngredientByIdService(userId, input.ingredientId);
   const result = await ingredientProductRepository.update(
     { productId, userId },
     {

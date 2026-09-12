@@ -16,48 +16,44 @@ import {
   listIngredientProductSchema,
   updateIngredientProductSchema,
 } from '../schemas/ingredient_product.schema';
-import { deleteIngredient } from '../controllers/ingredients.controller';
 
 export const ingredientProductRoutes = Router();
 
+ingredientProductRoutes.use(requireAuth);
+
 ingredientProductRoutes.get(
   '/',
-  requireAuth,
+
   validateRequest(listIngredientProductSchema),
   getIngredientProducts,
 );
 
 ingredientProductRoutes.get(
-  '/:upc',
-  requireAuth,
+  '/upc/:upc',
   validateRequest(ingredientProductUpcParams),
   getIngredientProductByUpc,
 );
 
 ingredientProductRoutes.get(
   '/:productId',
-  requireAuth,
   validateRequest(ingredientProductParams),
   getIngredientProductById,
 );
 
 ingredientProductRoutes.post(
   '/',
-  requireAuth,
   validateRequest(createIngredientProductSchema),
   createIngredientProduct,
 );
 
 ingredientProductRoutes.patch(
   '/:productId',
-  requireAuth,
   validateRequest(updateIngredientProductSchema),
   updateIngredientProduct,
 );
 
 ingredientProductRoutes.delete(
   '/:productId',
-  requireAuth,
   validateRequest(ingredientProductParams),
-  deleteIngredient,
+  deleteIngredientProduct,
 );

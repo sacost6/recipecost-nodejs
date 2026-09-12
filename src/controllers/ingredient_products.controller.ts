@@ -4,6 +4,7 @@ import type {
   ListIngredientProductsQuery,
   UpdateIngredientProductInput,
   IngredientProductUpcParams,
+  CreateIngredientProductInput,
 } from '../schemas/ingredient_product.schema';
 import {
   getIngredientProductsService,
@@ -37,7 +38,7 @@ export const getIngredientProductById = async (
   const { productId } = req.params;
 
   const product = await getIngredientProductByIdService(userId, productId);
-  res.status(201).json({
+  res.status(200).json({
     status: 'success',
     data: product,
   });
@@ -49,18 +50,17 @@ export const getIngredientProductByUpc = async (
 ): Promise<void> => {
   const userId = requireUserId(req);
 
-  const { upc } = req.body;
-
+  const { upc } = req.params;
   const product = await getIngredientProductByUpcService(userId, upc);
 
-  res.send(201).json({
+  res.status(200).json({
     status: 'success',
     data: product,
   });
 };
 
 export const createIngredientProduct = async (
-  req: Request,
+  req: Request<Record<string, never>, unknown, CreateIngredientProductInput>,
   res: Response,
 ): Promise<void> => {
   const userId = requireUserId(req);

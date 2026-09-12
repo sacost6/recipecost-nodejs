@@ -5,7 +5,7 @@ import {
   CreateProductPriceInput,
   UpdateProductPriceInput,
 } from '../schemas/product_prices.schema';
-import { HttpError } from '../middleware/errorHandling/ error';
+import { HttpError } from '../middleware/errorHandling/error';
 import { getIngredientProductByIdService } from './ingredient_products.service';
 
 export const getProductPricesService = async (

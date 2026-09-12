@@ -4,7 +4,7 @@ import {
   CreateIngredientUnitConversionInput,
   UpdateIngredientUnitConversionInput,
 } from '../schemas/ingredient_unit_conversion.schema';
-import { HttpError } from '../middleware/errorHandling/ error';
+import { HttpError } from '../middleware/errorHandling/error';
 
 export const getIngredientUnitConversionsService = async (): Promise<
   IngredientUnitConversion[]

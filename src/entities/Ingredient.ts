@@ -15,9 +15,17 @@ import {
 import { IngredientCategory } from './IngredientCategory';
 import { IngredientProduct } from './IngredientProduct';
 import { IngredientUnitConversion } from './IngredientUnitConversion';
+import { User } from './User';
 
 @Entity('ingredients')
-@Unique('uq_ingredients_name', ['name'])
+@Index('uq_ingredients_shared_name', ['name'], {
+  unique: true,
+  where: '"user_id" IS NULL',
+})
+@Index('uq_ingredients_private_name', ['userId', 'name'], {
+  unique: true,
+  where: '"user_id" IS NOT NULL',
+})
 @Index('idx_ingredients_category_id', ['categoryId'])
 export class Ingredient {
   @PrimaryGeneratedColumn('identity', {
@@ -44,6 +52,23 @@ export class Ingredient {
     nullable: true,
   })
   description!: string | null;
+
+  @Column({
+    name: 'user_id',
+    type: 'bigint',
+    nullable: true,
+  })
+  userId!: string | null;
+
+  @VersionColumn({ default: 1 })
+  version!: number;
+
+  @ManyToOne(() => User, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'user_id' })
+  user!: User | null;
 
   @ManyToOne(() => IngredientCategory, (category) => category.ingredients, {
     nullable: true,
@@ -76,7 +101,4 @@ export class Ingredient {
     default: () => 'CURRENT_TIMESTAMP',
   })
   updatedAt!: Date;
-
-  @VersionColumn({ default: 1 })
-  version!: number;
 }

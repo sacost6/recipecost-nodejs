@@ -1,5 +1,5 @@
 import type { Request } from 'express';
-import { HttpError } from '../../middleware/errorHandling/ error';
+import { HttpError } from '../../middleware/errorHandling/error';
 
 export const generateSession = async (
   req: Pick<Request, 'session'>,
