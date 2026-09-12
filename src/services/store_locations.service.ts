@@ -1,10 +1,6 @@
 import { storeLocationRepository } from '../repositories/store_locations.repo';
 import { StoreLocation } from '../entities/StoreLocation';
-import {
-  CreateStoreLocationInput,
-  UpdateStoreLocationInput,
-} from '../schemas/store_locations.schema';
-import { HttpError } from '../middleware/errorHandling/ error';
+import { CreateStoreLocationInput } from '../schemas/store_locations.schema';
 
 export const getStoreLocationsService = async (): Promise<StoreLocation[]> => {
   return storeLocationRepository.find({

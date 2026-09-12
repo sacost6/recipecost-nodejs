@@ -99,7 +99,7 @@ export const createIngredientProductService = async (
   return ingredientProductRepository.save(ingredientProduct);
 };
 
-export const getIngredientProductByUpc = async (
+export const getIngredientProductByUpcService = async (
   userId: string,
   upc: string,
 ): Promise<IngredientProduct> => {

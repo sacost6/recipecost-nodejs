@@ -1,12 +1,7 @@
 import * as argon2 from 'argon2';
 import { userRepository } from '../repositories/users.repo';
-import type {
-  RegisterInput,
-  LoginInput,
-  LogoutInput,
-} from '../schemas/auth.schema';
+import type { RegisterInput, LoginInput } from '../schemas/auth.schema';
 import { HttpError } from '../middleware/errorHandling/ error';
-import { StringValidation } from 'zod/v3';
 
 export const registerService = async (input: RegisterInput) => {
   const user = userRepository.create({
