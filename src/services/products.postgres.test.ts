@@ -53,7 +53,7 @@ import {
   createIngredientProductService,
   deleteIngredientProductService,
   getIngredientProductByIdService,
-  getIngredientProductByUpc,
+  getIngredientProductByUpcService,
   getIngredientProductsService,
   updateIngredientProductService,
 } from './ingredient_products.service';
@@ -228,15 +228,16 @@ describe.skipIf(!database.url)(
       const own = await createProduct(alice, { upc: '012345678905' });
       const theirs = await createProduct(bob, { upc: '012345678905' });
       expect(
-        (await getIngredientProductByUpc(alice.userId, ' 012345678905 '))
+        (await getIngredientProductByUpcService(alice.userId, ' 012345678905 '))
           .productId,
       ).toBe(own.productId);
       expect(
-        (await getIngredientProductByUpc(bob.userId, '012345678905')).productId,
+        (await getIngredientProductByUpcService(bob.userId, '012345678905'))
+          .productId,
       ).toBe(theirs.productId);
       await createProduct(bob, { upc: 'bob-only' });
       await expect(
-        getIngredientProductByUpc(alice.userId, 'bob-only'),
+        getIngredientProductByUpcService(alice.userId, 'bob-only'),
       ).rejects.toMatchObject({ statusCode: 404 });
     });
 
@@ -271,7 +272,7 @@ describe.skipIf(!database.url)(
         getIngredientProductByIdService(alice.userId, missingId),
       ).rejects.toMatchObject({ statusCode: 404 });
       await expect(
-        getIngredientProductByUpc(alice.userId, 'missing'),
+        getIngredientProductByUpcService(alice.userId, 'missing'),
       ).rejects.toMatchObject({ statusCode: 404 });
       await expect(
         updateIngredientProductService(alice.userId, missingId, {

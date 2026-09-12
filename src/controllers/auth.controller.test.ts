@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { HttpError } from '../middleware/errorHandling/ error';
+import { HttpError } from '../middleware/errorHandling/error';
 import type { LoginInput } from '../schemas/auth.schema';
 import { getUser, login, logout, register } from './auth.controller';
 

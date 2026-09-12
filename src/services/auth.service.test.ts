@@ -1,6 +1,6 @@
 import * as argon2 from 'argon2';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HttpError } from '../middleware/errorHandling/ error';
+import { HttpError } from '../middleware/errorHandling/error';
 import { getUserService, loginService, registerService } from './auth.service';
 
 const repository = vi.hoisted(() => ({

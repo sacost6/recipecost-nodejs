@@ -2,7 +2,7 @@ import request from 'supertest';
 import { QueryFailedError } from 'typeorm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Ingredient } from '../entities/Ingredient';
-import type { IngredientRow } from '../repositories/ingredient.repo';
+import type { IngredientRow } from '../services/ingredients.service';
 import { app } from '../app';
 
 const repository = vi.hoisted(() => ({
@@ -25,6 +25,10 @@ vi.mock('../repositories/ingredient.repo', () => ({
 vi.mock('./auth.routes', async () => {
   const { Router } = await import('express');
   return { authRoutes: Router() };
+});
+vi.mock('./ingredient_products.routes', async () => {
+  const { Router } = await import('express');
+  return { ingredientProductRoutes: Router() };
 });
 vi.mock('../middleware/session.middleware', () => ({
   sessionMiddleware: (_req: unknown, _res: unknown, next: () => void) => next(),

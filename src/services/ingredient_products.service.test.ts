@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { HttpError } from '../middleware/errorHandling/ error';
+import { HttpError } from '../middleware/errorHandling/error';
 import {
   createIngredientProductService,
   deleteIngredientProductService,
   getIngredientProductByIdService,
-  getIngredientProductByUpc,
+  getIngredientProductByUpcService,
   getIngredientProductsService,
   updateIngredientProductService,
 } from './ingredient_products.service';
@@ -126,7 +126,7 @@ describe('product lookups', () => {
 
   it('looks up a UPC within the trusted owner and preserves leading zeros', async () => {
     await expect(
-      getIngredientProductByUpc(userId, ' 000123456789 '),
+      getIngredientProductByUpcService(userId, ' 000123456789 '),
     ).resolves.toBe(product);
     expect(repository.findOneBy).toHaveBeenCalledExactlyOnceWith({
       upc: '000123456789',
@@ -141,7 +141,7 @@ describe('product lookups', () => {
     },
     {
       name: 'UPC',
-      lookup: () => getIngredientProductByUpc(userId, '000123456789'),
+      lookup: () => getIngredientProductByUpcService(userId, '000123456789'),
     },
   ])(
     'returns 404 for a scoped $name miss without falling back to a global lookup',
@@ -302,7 +302,7 @@ describe('product storage failures', () => {
     {
       name: 'UPC lookup',
       operation: repository.findOneBy,
-      call: () => getIngredientProductByUpc(userId, '000123456789'),
+      call: () => getIngredientProductByUpcService(userId, '000123456789'),
     },
     {
       name: 'create',
