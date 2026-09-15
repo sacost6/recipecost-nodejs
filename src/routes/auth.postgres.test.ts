@@ -5,6 +5,7 @@
  */
 import 'reflect-metadata';
 import * as argon2 from 'argon2';
+import type { RequestHandler } from 'express';
 import type { DataSource } from 'typeorm';
 import type { PGStore } from 'connect-pg-simple';
 import type { SessionData } from 'express-session';
@@ -28,6 +29,17 @@ const state = vi.hoisted(() => ({
   stores: [] as PGStore[],
 }));
 
+// Rate limiting has its own HTTP tests; database/session tests share this app
+// without sharing request quotas across otherwise independent test cases.
+vi.mock('../middleware/authRateLimit.middleware', () => {
+  const passThrough: RequestHandler = (_req, _res, next) => next();
+  return {
+    createAuthLimiters: () => ({
+      loginLimiter: passThrough,
+      registerLimiter: passThrough,
+    }),
+  };
+});
 vi.mock('../schemas/env.schema', () => ({
   env: {
     NODE_ENV: 'test',

@@ -8,12 +8,20 @@ import {
 import { loginSchema, registerSchema } from '../schemas/auth.schema';
 import { validateRequest } from '../middleware/validateRequest.middleware';
 import { requireAuth } from '../middleware/requireAuth.middleware';
+import { createAuthLimiters } from '../middleware/authRateLimit.middleware';
 
 export const authRoutes = Router();
 
-authRoutes.post('/login', validateRequest(loginSchema), login);
+const { loginLimiter, registerLimiter } = createAuthLimiters();
 
-authRoutes.post('/register', validateRequest(registerSchema), register);
+authRoutes.post('/login', loginLimiter, validateRequest(loginSchema), login);
+
+authRoutes.post(
+  '/register',
+  registerLimiter,
+  validateRequest(registerSchema),
+  register,
+);
 
 authRoutes.post('/logout', logout);
 

@@ -10,7 +10,8 @@ export const AppDataSource = new DataSource({
       ? { rejectUnauthorized: true }
       : { rejectUnauthorized: false },
   entities: ['src/entities/**/*.ts'],
-  migrations: ['src/migrations/[0-9]*-*.ts'],
+  migrations: ['src/migrations-v2/[0-9]*-*.ts'],
+  migrationsTableName: 'migrations_v2',
   synchronize: false,
-  logging: ['error', 'warn'],
+  logging: env.NODE_ENV === 'production' ? false : ['error', 'warn'],
 });

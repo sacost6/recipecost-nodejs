@@ -58,7 +58,32 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
     response.stack = error.stack;
   }
 
-  logger.error({ err: error }, 'Request Failed');
+  logRequestError(error, statusCode);
 
   res.status(statusCode).json(response);
+};
+
+const logRequestError = (error: Error, statusCode: number): void => {
+  if (error instanceof QueryFailedError) {
+    const databaseError = error.driverError as PostgresError;
+
+    logger.error(
+      {
+        statusCode,
+        databaseCode: databaseError.code,
+        constraint: databaseError.constraint,
+      },
+      'Database request failed',
+    );
+
+    return;
+  }
+
+  logger.error(
+    {
+      statusCode,
+      errorType: error.name,
+    },
+    'Request failed',
+  );
 };

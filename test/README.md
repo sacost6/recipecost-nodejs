@@ -13,6 +13,13 @@ the user repository and PostgreSQL session store with test doubles. Schema,
 service, controller, authentication guard, and session configuration tests cover
 boundary inputs and failure paths separately.
 
+Authentication-flow suites replace the rate-limit middleware with pass-through
+handlers so requests from their shared local IP do not accumulate across tests.
+`authRateLimit.middleware.test.ts` mounts the real auth router with fresh limiters
+and stub controllers/services. It checks both quotas, blocked responses and
+headers, independent endpoints and client IPs, and window expiry using a fake
+clock while keeping HTTP networking timers real.
+
 Authentication coverage includes:
 
 - Registration, normalized email, exact password hashing, and duplicate emails.

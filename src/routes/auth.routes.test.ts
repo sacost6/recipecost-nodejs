@@ -1,4 +1,5 @@
 import * as argon2 from 'argon2';
+import type { RequestHandler } from 'express';
 import request, { type Response } from 'supertest';
 import type { MemoryStore } from 'express-session';
 import { QueryFailedError } from 'typeorm';
@@ -6,7 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { app } from '../app';
 
 // Real app/router, validation, services, Argon2, cookies and session middleware.
-// Only database boundaries are replaced. PostgreSQL behavior is tested separately.
+// Database boundaries are replaced. Rate limiting is tested separately so this
+// shared app cannot accumulate request counts across independent auth-flow tests.
 const repository = vi.hoisted(() => ({
   create: vi.fn(),
   save: vi.fn(),
@@ -18,6 +20,15 @@ const state = vi.hoisted(() => ({
 }));
 
 vi.mock('../repositories/users.repo', () => ({ userRepository: repository }));
+vi.mock('../middleware/authRateLimit.middleware', () => {
+  const passThrough: RequestHandler = (_req, _res, next) => next();
+  return {
+    createAuthLimiters: () => ({
+      loginLimiter: passThrough,
+      registerLimiter: passThrough,
+    }),
+  };
+});
 vi.mock('../repositories/ingredient.repo', () => ({
   ingredientRepository: {},
 }));

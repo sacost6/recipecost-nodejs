@@ -1,4 +1,4 @@
-import { productPriceRepository } from '../repositories/product_prices.schema';
+import { productPriceRepository } from '../repositories/product_prices.repo';
 import { ingredientProductRepository } from '../repositories/ingredient_products.repo';
 import { ProductPrice } from '../entities/ProductPrice';
 import {
