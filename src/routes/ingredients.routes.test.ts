@@ -15,6 +15,20 @@ import { Ingredient } from '../entities/Ingredient';
 import type { IngredientRow } from '../services/utils/databaseRowTypes';
 import { app } from '../app';
 
+// Shared catalog endpoints have a separate app-level HTTP suite.
+vi.mock('./units.routes', async () => {
+  const { Router } = await import('express');
+  return { unitRoutes: Router() };
+});
+vi.mock('./retailers.routes', async () => {
+  const { Router } = await import('express');
+  return { retailerRoutes: Router() };
+});
+vi.mock('./ingredient_category.routes', async () => {
+  const { Router } = await import('express');
+  return { ingredientCategoryRoutes: Router() };
+});
+
 const session = vi.hoisted(() => ({ userId: undefined as string | undefined }));
 const repository = vi.hoisted(() => ({
   find: vi.fn(),

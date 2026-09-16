@@ -6,6 +6,20 @@ import { QueryFailedError } from 'typeorm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { app } from '../app';
 
+// Shared catalog endpoints have a separate app-level HTTP suite.
+vi.mock('./units.routes', async () => {
+  const { Router } = await import('express');
+  return { unitRoutes: Router() };
+});
+vi.mock('./retailers.routes', async () => {
+  const { Router } = await import('express');
+  return { retailerRoutes: Router() };
+});
+vi.mock('./ingredient_category.routes', async () => {
+  const { Router } = await import('express');
+  return { ingredientCategoryRoutes: Router() };
+});
+
 // Real app/router, validation, services, Argon2, cookies and session middleware.
 // Database boundaries are replaced. Rate limiting is tested separately so this
 // shared app cannot accumulate request counts across independent auth-flow tests.

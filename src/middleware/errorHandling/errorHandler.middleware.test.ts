@@ -320,25 +320,28 @@ describe('errorHandler stack traces and logging', () => {
     expect(invoke(error).status).toHaveBeenCalledWith(500);
   });
 
-  it('preserves the original stack, message and database diagnostics in serialized production logs', () => {
+  it('logs safe database metadata without SQL, parameters or private diagnostics', () => {
     const error = databaseFailure('23505', 'uq_ingredients_name');
     invoke(error);
-
-    // Check the actual serialized output: spying on the Error object alone
-    // would miss Pino dropping non-enumerable message and stack properties.
-    expect(logError).toHaveBeenCalledTimes(1);
+    expect(logError).toHaveBeenCalledExactlyOnceWith(
+      {
+        statusCode: 409,
+        databaseCode: '23505',
+        constraint: 'uq_ingredients_name',
+      },
+      'Database request failed',
+    );
     expect(serializedLogs).toHaveLength(1);
-    const record = serializedLogs[0];
-    const loggedError = record.err ?? record.error;
-    expect(loggedError).toMatchObject({
-      message: error.message,
-      stack: error.stack,
-      query: error.query,
-      parameters: error.parameters,
-      code: '23505',
-      constraint: 'uq_ingredients_name',
-      detail: 'Key (name)=(private ingredient name) already exists.',
-    });
+    const output = JSON.stringify(serializedLogs[0]);
+    for (const secret of [
+      error.query,
+      'private ingredient name',
+      'private PostgreSQL diagnostic',
+    ]) {
+      expect(output).not.toContain(secret);
+    }
+    expect(serializedLogs[0]).not.toHaveProperty('err');
+    expect(serializedLogs[0]).not.toHaveProperty('error');
   });
 
   it.each([

@@ -54,6 +54,21 @@ vi.mock('../middleware/session.middleware', () => ({
 }));
 
 import { app } from '../app';
+
+// Shared catalog endpoints have a separate app-level HTTP suite.
+vi.mock('./units.routes', async () => {
+  const { Router } = await import('express');
+  return { unitRoutes: Router() };
+});
+vi.mock('./retailers.routes', async () => {
+  const { Router } = await import('express');
+  return { retailerRoutes: Router() };
+});
+vi.mock('./ingredient_category.routes', async () => {
+  const { Router } = await import('express');
+  return { ingredientCategoryRoutes: Router() };
+});
+
 import { AppDataSource } from '../data-source';
 import { Ingredient } from '../entities/Ingredient';
 import { IngredientCategory } from '../entities/IngredientCategory';

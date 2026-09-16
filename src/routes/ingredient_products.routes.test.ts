@@ -14,6 +14,20 @@ import {
 } from 'vitest';
 import { app } from '../app';
 
+// Shared catalog endpoints have a separate app-level HTTP suite.
+vi.mock('./units.routes', async () => {
+  const { Router } = await import('express');
+  return { unitRoutes: Router() };
+});
+vi.mock('./retailers.routes', async () => {
+  const { Router } = await import('express');
+  return { retailerRoutes: Router() };
+});
+vi.mock('./ingredient_category.routes', async () => {
+  const { Router } = await import('express');
+  return { ingredientCategoryRoutes: Router() };
+});
+
 const repository = vi.hoisted(() => ({
   create: vi.fn(),
   save: vi.fn(),
@@ -71,7 +85,7 @@ vi.mock('../middleware/logging.middleware', async () => {
   return { logger: pino({ level: 'silent' }) };
 });
 
-const base = '/api/ingredient-products';
+const base = '/api/products';
 const aliceId = '9007199254740993';
 const bobId = '9007199254740994';
 const productId = '9007199254740995';
