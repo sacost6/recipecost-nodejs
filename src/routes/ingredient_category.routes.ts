@@ -8,4 +8,10 @@ import { ingredientCategoryParamsSchema } from '../schemas/ingredient_category.s
 
 export const ingredientCategoryRoutes = Router();
 
-ingredientCategoryParamsSchema.get('/', getIngredientCategories);
+ingredientCategoryRoutes.get('/', getIngredientCategories);
+
+ingredientCategoryRoutes.get(
+  '/:categoryId',
+  validateRequest(ingredientCategoryParamsSchema),
+  getIngredientCategoryById,
+);

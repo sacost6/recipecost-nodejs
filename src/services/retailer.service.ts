@@ -16,7 +16,7 @@ export const getRetailerByIdService = async (
   });
 
   if (!retailer) {
-    throw new HttpError(404, 'Unit does not exist.');
+    throw new HttpError(404, 'Retailer does not exist.');
   }
 
   return retailer;

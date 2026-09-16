@@ -48,6 +48,13 @@ Product and price coverage includes:
   observation without changing the other observations.
 - Database constraints and atomic failure of invalid writes.
 
+`catalog.routes.test.ts` covers the public units, categories, and retailers
+through the actual app registration, validation, controllers, and services, with
+repository doubles. It checks lists, empty catalogs, typed ID lookups, invalid
+and missing IDs, bigint precision, database failures, and read-only routing.
+Logger tests verify serialized header redaction (including child loggers) and
+that database errors exclude SQL parameters and private diagnostic details.
+
 Price services now accept the authenticated `userId` as their first argument.
 Use `getProductPriceByIdService(userId, priceId)` for one observation and
 `getProductPricesByProductIdService(userId, productId)` for a product's history.
@@ -100,6 +107,6 @@ logout revocation, expiration, and missing users. It provisions its session tabl
 inside its test schema using the store's own table-creation code.
 
 The tests document current behavior: `/me` returns `404` if its previously
-authenticated user has been deleted. CSRF protection and login rate limiting
-are not yet implemented or covered. These tests do not certify deployment
-configuration, the full migration chain, or log redaction.
+authenticated user has been deleted. CSRF protection is not yet implemented or
+covered. These tests do not certify deployment configuration, the full migration
+chain, or every possible source of sensitive log data.

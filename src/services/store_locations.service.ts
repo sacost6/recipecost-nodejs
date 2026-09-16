@@ -1,6 +1,7 @@
 import { storeLocationRepository } from '../repositories/store_locations.repo';
 import { StoreLocation } from '../entities/StoreLocation';
 import { CreateStoreLocationInput } from '../schemas/store_locations.schema';
+import { HttpError } from '../middleware/errorHandling/error';
 
 export const getStoreLocationsService = async (): Promise<StoreLocation[]> => {
   return storeLocationRepository.find({
@@ -8,7 +9,21 @@ export const getStoreLocationsService = async (): Promise<StoreLocation[]> => {
   });
 };
 
-export const getStoreLocationService = async (
+export const getStoreLocationByIdService = async (
+  storeLocationId: string,
+): Promise<StoreLocation> => {
+  const location = await storeLocationRepository.findOneBy({
+    storeLocationId,
+  });
+
+  if (!location) {
+    throw new HttpError(404, 'Store location does not exist.');
+  }
+
+  return location;
+};
+
+export const createStoreLocationService = async (
   input: CreateStoreLocationInput,
 ): Promise<StoreLocation> => {
   const storeLocation = storeLocationRepository.create({
