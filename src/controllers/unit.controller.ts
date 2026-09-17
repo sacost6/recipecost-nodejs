@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { getUnitService, getUnitByIdService } from '../services/units.service';
+import { getUnitService, getUnitByIdService } from '../services/unit.service';
 import type { UnitParamsSchema } from '../schemas/unit.schema';
 
 export const getUnits = async (req: Request, res: Response) => {
