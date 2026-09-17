@@ -1,7 +1,7 @@
-import { ingredientProductRepository } from '../repositories/ingredient_products.repo';
+import { ingredientProductRepository } from '../repositories/ingredient_product.repo';
 import { IngredientProduct } from '../entities/IngredientProduct';
 import { HttpError } from '../middleware/errorHandling/error';
-import { getIngredientByIdService } from './ingredients.service';
+import { getIngredientByIdService } from './ingredient.service';
 import { IngredientProductRow } from './utils/databaseRowTypes';
 import { requireUpdatedRow } from './utils/requireUpdatedRow';
 import { entityFromRow } from './utils/entityFromRow';

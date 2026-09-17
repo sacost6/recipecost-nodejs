@@ -36,7 +36,7 @@ vi.mock('./ingredient_category.routes', async () => {
   return { ingredientCategoryRoutes: Router() };
 });
 
-import { userRepository } from '../repositories/users.repo';
+import { userRepository } from '../repositories/user.repo';
 
 const state = vi.hoisted(() => ({
   schema: `auth_tests_${Date.now()}_${Math.random().toString(16).slice(2)}`,

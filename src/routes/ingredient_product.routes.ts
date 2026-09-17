@@ -8,7 +8,7 @@ import {
   getIngredientProductByUpc,
   getIngredientProducts,
   updateIngredientProduct,
-} from '../controllers/ingredient_products.controller';
+} from '../controllers/ingredient_product.controller';
 import {
   createIngredientProductSchema,
   ingredientProductParams,

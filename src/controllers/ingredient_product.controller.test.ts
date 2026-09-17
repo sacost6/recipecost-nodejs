@@ -8,7 +8,7 @@ import {
   getIngredientProductByUpc,
   getIngredientProducts,
   updateIngredientProduct,
-} from './ingredient_products.controller';
+} from './ingredient_product.controller';
 
 const services = vi.hoisted(() => ({
   getIngredientProductsService: vi.fn(),

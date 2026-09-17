@@ -9,7 +9,7 @@ import {
   getIngredientProductByUpcService,
   getIngredientProductsService,
   updateIngredientProductService,
-} from './ingredient_products.service';
+} from './ingredient_product.service';
 
 const repository = vi.hoisted(() => ({
   create: vi.fn(),

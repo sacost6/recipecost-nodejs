@@ -5,7 +5,7 @@ import {
   getIngredientByIdService,
   getIngredientsService,
   updateIngredientService,
-} from '../services/ingredients.service';
+} from '../services/ingredient.service';
 import { requireUserId } from '../controllers/utils/auth';
 import { type IngredientParamsSchema } from '../schemas/ingredient.schema';
 

@@ -7,7 +7,7 @@ import {
 import {
   StoreLocationParamsSchema,
   CreateStoreLocationInput,
-} from '../schemas/store_locations.schema';
+} from '../schemas/store_location.schema';
 
 export const getStoreLocations = async (req: Request, res: Response) => {
   const locations = await getStoreLocationsService();

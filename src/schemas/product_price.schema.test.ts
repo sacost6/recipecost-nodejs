@@ -3,7 +3,7 @@ import {
   createProductPriceSchema,
   productPriceParamsSchema,
   updateProductPriceSchema,
-} from './product_prices.schema';
+} from './product_price.schema';
 
 const body = {
   productId: '9007199254740993',

@@ -1,5 +1,5 @@
 import * as argon2 from 'argon2';
-import { userRepository } from '../repositories/users.repo';
+import { userRepository } from '../repositories/user.repo';
 import type { RegisterInput, LoginInput } from '../schemas/auth.schema';
 import { HttpError } from '../middleware/errorHandling/error';
 

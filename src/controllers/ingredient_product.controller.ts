@@ -13,7 +13,7 @@ import {
   createIngredientProductService,
   updateIngredientProductService,
   deleteIngredientProductService,
-} from '../services/ingredient_products.service';
+} from '../services/ingredient_product.service';
 import { requireUserId } from './utils/auth';
 
 export const getIngredientProducts = async (

@@ -7,7 +7,7 @@ import {
   getIngredientsById,
   getIngredients,
   updateIngredient,
-} from '../controllers/ingredients.controller';
+} from '../controllers/ingredient.controller';
 import {
   createIngredientSchema,
   updateIngredientSchema,

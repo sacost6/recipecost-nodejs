@@ -1,12 +1,12 @@
-import { productPriceRepository } from '../repositories/product_prices.repo';
-import { ingredientProductRepository } from '../repositories/ingredient_products.repo';
+import { productPriceRepository } from '../repositories/product_price.repo';
+import { ingredientProductRepository } from '../repositories/ingredient_product.repo';
 import { ProductPrice } from '../entities/ProductPrice';
 import {
   CreateProductPriceInput,
   UpdateProductPriceInput,
-} from '../schemas/product_prices.schema';
+} from '../schemas/product_price.schema';
 import { HttpError } from '../middleware/errorHandling/error';
-import { getIngredientProductByIdService } from './ingredient_products.service';
+import { getIngredientProductByIdService } from './ingredient_product.service';
 
 export const getProductPricesService = async (
   userId: string,

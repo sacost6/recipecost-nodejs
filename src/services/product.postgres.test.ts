@@ -58,7 +58,7 @@ import {
   getIngredientProductByUpcService,
   getIngredientProductsService,
   updateIngredientProductService,
-} from './ingredient_products.service';
+} from './ingredient_product.service';
 import {
   createProductPriceService,
   deleteProductPriceService,
