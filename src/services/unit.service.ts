@@ -1,4 +1,4 @@
-import { unitRepository } from '../repositories/units.repo';
+import { unitRepository } from '../repositories/unit.repo';
 import { Unit } from '../entities/Unit';
 import { HttpError } from '../middleware/errorHandling/error';
 

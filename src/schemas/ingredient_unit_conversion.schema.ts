@@ -25,7 +25,7 @@ export const createIngredientUnitConversionSchema = z.object({
   body: createIngredientUnitConversionBodySchema,
 });
 
-export const ingredientUnitConversionParamsSchema = z.object({
+export const ingredientUnitConversionByIdParamsSchema = z.object({
   params: z.object({
     ingredientId: positiveBigintIdSchema,
     fromUnitId: positiveSmallintSchema,
@@ -33,8 +33,14 @@ export const ingredientUnitConversionParamsSchema = z.object({
   }),
 });
 
+export const ingredientUnitConversionByIngredientIdParamsSchema = z.object({
+  params: z.object({
+    ingredientId: positiveBigintIdSchema,
+  }),
+});
+
 export const updateIngredientUnitConversionSchema =
-  ingredientUnitConversionParamsSchema.extend({
+  ingredientUnitConversionByIdParamsSchema.extend({
     body: updateIngredientUnitConversionBodySchema,
   });
 
@@ -46,6 +52,10 @@ export type UpdateIngredientUnitConversionInput = z.infer<
   typeof updateIngredientUnitConversionBodySchema
 >;
 
-export type IngredientUnitConversionParamsSchema = z.infer<
-  typeof ingredientUnitConversionParamsSchema
+export type IngredientUnitConversionByIdParamsSchema = z.infer<
+  typeof ingredientUnitConversionByIdParamsSchema
+>['params'];
+
+export type IngredientUnitConversionByIngredientIdParamsSchema = z.infer<
+  typeof ingredientUnitConversionByIngredientIdParamsSchema
 >['params'];

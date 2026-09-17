@@ -66,7 +66,7 @@ import {
   getProductPricesByProductIdService,
   getProductPricesService,
   updateProductPriceService,
-} from './product_prices.service';
+} from './product_price.service';
 
 const schema = `product_tests_${randomUUID().replaceAll('-', '')}`;
 const products = AppDataSource.getRepository(IngredientProduct);

@@ -32,7 +32,29 @@ export const getIngredientUnitConversionByIngredientIdService = async (
   return ingredientUnitConversion;
 };
 
-export const createIngredientUnitConverionService = async (
+export const getIngredientUnitConversionByIdService = async (
+  ingredientId: string,
+  fromUnitId: number,
+  toUnitId: number,
+): Promise<IngredientUnitConversion> => {
+  const ingredientUnitConversion =
+    await ingredientUnitConversionRepository.findOneBy({
+      ingredientId,
+      fromUnitId,
+      toUnitId,
+    });
+
+  if (!ingredientUnitConversion) {
+    throw new HttpError(
+      404,
+      'No matching unit conversion exists for this ingredient.',
+    );
+  }
+
+  return ingredientUnitConversion;
+};
+
+export const createIngredientUnitConversionService = async (
   input: CreateIngredientUnitConversionInput,
 ): Promise<IngredientUnitConversion> => {
   const ingredientUnitConversion = ingredientUnitConversionRepository.create({

@@ -9,14 +9,13 @@ import {
   storeLocationParamsSchema,
   createStoreLocationSchema,
 } from '../schemas/store_location.schema';
-import { validate } from 'zod';
 
 export const storeLocationRoutes = Router();
 
 storeLocationRoutes.get('/', getStoreLocations);
 
 storeLocationRoutes.get(
-  '/:locationId',
+  '/:storeLocationId',
   validateRequest(storeLocationParamsSchema),
   getStoreLocationById,
 );

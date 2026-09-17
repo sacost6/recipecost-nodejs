@@ -3,7 +3,7 @@ import {
   getStoreLocationsService,
   getStoreLocationByIdService,
   createStoreLocationService,
-} from '../services/store_locations.service';
+} from '../services/store_location.service';
 import {
   StoreLocationParamsSchema,
   CreateStoreLocationInput,
@@ -39,7 +39,7 @@ export const createStoreLocation = async (
   const location = await createStoreLocationService(req.body);
 
   res.status(201).json({
-    status: 'succss',
+    status: 'success',
     data: location,
   });
 };
