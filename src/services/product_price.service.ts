@@ -1,13 +1,13 @@
 import { productPriceRepository } from '../repositories/product_price.repo';
 import { ingredientProductRepository } from '../repositories/ingredient_product.repo';
 import { ProductPrice } from '../entities/ProductPrice';
+import { HttpError } from '../middleware/errorHandling/error';
+import { getIngredientProductByIdService } from './ingredient_product.service';
+import { getStoreLocationByIdService } from './store_location.service';
 import {
   CreateProductPriceInput,
   UpdateProductPriceInput,
 } from '../schemas/product_price.schema';
-import { HttpError } from '../middleware/errorHandling/error';
-import { getIngredientProductByIdService } from './ingredient_product.service';
-
 export const getProductPricesService = async (
   userId: string,
 ): Promise<ProductPrice[]> => {
@@ -50,6 +50,7 @@ export const createProductPriceService = async (
   input: CreateProductPriceInput,
 ): Promise<ProductPrice> => {
   await getIngredientProductByIdService(userId, input.productId);
+  await getStoreLocationByIdService(input.storeLocationId);
 
   const productPrice = productPriceRepository.create({
     productId: input.productId,

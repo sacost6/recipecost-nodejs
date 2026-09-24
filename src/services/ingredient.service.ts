@@ -15,6 +15,9 @@ export const getIngredientsService = async (
 ): Promise<Ingredient[]> => {
   const ingredient = await ingredientRepository.find({
     where: [{ userId: IsNull() }, { userId }],
+    relations: {
+      category: true,
+    },
     order: { name: 'ASC' },
   });
 
@@ -29,10 +32,13 @@ export const getIngredientByIdService = async (
   userId: string,
   ingredientId: string,
 ): Promise<Ingredient> => {
-  const ingredient = await ingredientRepository.findOneBy([
-    { ingredientId, userId: IsNull() },
-    { ingredientId, userId },
-  ]);
+  const ingredient = await ingredientRepository.findOne({
+    where: [
+      { ingredientId, userId: IsNull() },
+      { ingredientId, userId },
+    ],
+    relations: { category: true },
+  });
 
   if (!ingredient) {
     throw new HttpError(404, 'Ingredient not found');

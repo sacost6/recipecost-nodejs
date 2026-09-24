@@ -16,10 +16,18 @@ import {
   listIngredientProductSchema,
   updateIngredientProductSchema,
 } from '../schemas/ingredient_product.schema';
+import { validate } from 'zod';
+import { getProductPricesByProductId } from '../controllers/product_price.controller';
 
 export const ingredientProductRoutes = Router();
 
 ingredientProductRoutes.use(requireAuth);
+
+ingredientProductRoutes.get(
+  '/:productId/prices',
+  validateRequest(ingredientProductParams),
+  getProductPricesByProductId,
+);
 
 ingredientProductRoutes.get(
   '/',
