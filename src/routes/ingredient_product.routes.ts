@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { validateRequest } from '../middleware/validateRequest.middleware';
 import { requireAuth } from '../middleware/requireAuth.middleware';
+import { getProductPricesByProductId } from '../controllers/product_price.controller';
 import {
   createIngredientProduct,
   deleteIngredientProduct,
@@ -16,8 +17,6 @@ import {
   listIngredientProductSchema,
   updateIngredientProductSchema,
 } from '../schemas/ingredient_product.schema';
-import { validate } from 'zod';
-import { getProductPricesByProductId } from '../controllers/product_price.controller';
 
 export const ingredientProductRoutes = Router();
 
