@@ -1,4 +1,5 @@
 import { ingredientRepository } from '../repositories/ingredient.repo';
+import { ingredientCategoryRepository } from '../repositories/ingredient_category.repo';
 import { Ingredient } from '../entities/Ingredient';
 import { IsNull } from 'typeorm';
 import { HttpError } from '../middleware/errorHandling/error';
@@ -9,6 +10,17 @@ import {
   CreateIngredientInput,
   UpdateIngredientInput,
 } from '../schemas/ingredient.schema';
+
+const withCategory = async (ingredient: Ingredient): Promise<Ingredient> => {
+  ingredient.category =
+    ingredient.categoryId === null
+      ? null
+      : await ingredientCategoryRepository.findOneBy({
+          categoryId: ingredient.categoryId,
+        });
+
+  return ingredient;
+};
 
 export const getIngredientsService = async (
   userId: string,
@@ -58,7 +70,9 @@ export const createIngredientService = async (
     description: input.description ?? null,
   });
 
-  return ingredientRepository.save(ingredient);
+  const savedIngredient = await ingredientRepository.save(ingredient);
+
+  return withCategory(savedIngredient);
 };
 
 export const updateIngredientService = async (
@@ -82,7 +96,9 @@ export const updateIngredientService = async (
     'Ingredient',
   );
 
-  return entityFromRow(ingredientRepository, row);
+  const updatedIngredient = entityFromRow(ingredientRepository, row);
+
+  return withCategory(updatedIngredient);
 };
 
 export const deleteIngredientService = async (

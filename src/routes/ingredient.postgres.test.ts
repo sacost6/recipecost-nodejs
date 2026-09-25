@@ -260,6 +260,7 @@ describe.skipIf(!testUrl)('ingredients API with real PostgreSQL', () => {
       userId: session.userId,
       name: 'Flour',
       categoryId: null,
+      category: null,
       description: null,
       version: 1,
       createdAt: expect.any(String),
@@ -283,6 +284,10 @@ describe.skipIf(!testUrl)('ingredients API with real PostgreSQL', () => {
       description: '  For bread  ',
     });
     expect(response.status).toBe(201);
+    expect(response.body.data.category).toMatchObject({
+      categoryId: category.categoryId,
+      name: category.name,
+    });
     const stored = await ingredientRepository.findOneByOrFail({
       ingredientId: response.body.data.ingredientId,
     });
@@ -379,11 +384,13 @@ describe.skipIf(!testUrl)('ingredients API with real PostgreSQL', () => {
       name: 'Bread flour',
       description: 'Original description',
       categoryId: category.categoryId,
+      category: { categoryId: category.categoryId, name: category.name },
       version: 2,
       createdAt: ingredient.createdAt.toISOString(),
     });
-    const stored = await ingredientRepository.findOneByOrFail({
-      ingredientId: ingredient.ingredientId,
+    const stored = await ingredientRepository.findOneOrFail({
+      where: { ingredientId: ingredient.ingredientId },
+      relations: { category: true },
     });
     expect(response.body.data).toEqual(JSON.parse(JSON.stringify(stored)));
     expect(stored.updatedAt.getTime()).toBeGreaterThanOrEqual(
@@ -408,6 +415,7 @@ describe.skipIf(!testUrl)('ingredients API with real PostgreSQL', () => {
     expect(cleared.body.data).toMatchObject({
       name: 'Flour',
       categoryId: null,
+      category: null,
       description: null,
       version: 2,
     });
