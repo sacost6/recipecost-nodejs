@@ -22,6 +22,12 @@ const withCategory = async (ingredient: Ingredient): Promise<Ingredient> => {
   return ingredient;
 };
 
+const toTitleCase = (str: string) => {
+  return str.toLocaleLowerCase().replace(/\b\w/g, function (char) {
+    return char.toUpperCase();
+  });
+};
+
 export const getIngredientsService = async (
   userId: string,
 ): Promise<Ingredient[]> => {
@@ -65,7 +71,7 @@ export const createIngredientService = async (
 ): Promise<Ingredient> => {
   const ingredient = ingredientRepository.create({
     userId,
-    name: input.name,
+    name: toTitleCase(input.name),
     categoryId: input.categoryId ?? null,
     description: input.description ?? null,
   });
