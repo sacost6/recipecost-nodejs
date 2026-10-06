@@ -4,12 +4,12 @@ import { positiveBigintIdSchema, stringSchema } from './common.schema';
 const createStoreLocationBodySchema = z.strictObject({
   retailerId: positiveBigintIdSchema,
   storeNumber: stringSchema.max(50).nullable().optional(),
-  addressLine1: stringSchema.min(1).max(150),
+  streetName: stringSchema.min(1).max(150),
   addressLine2: stringSchema.max(150).nullable().optional(),
-  stateCode: stringSchema.length(2),
+  stateCode: stringSchema.length(2).nullable().optional(),
   city: stringSchema.min(1).max(100),
-  postalCode: stringSchema.min(1).max(20),
-  countryCode: stringSchema.length(2).toUpperCase(),
+  postalCode: stringSchema.min(1).max(20).nullable().optional(),
+  countryCode: stringSchema.length(2).toUpperCase().default('US'),
 });
 
 const updateStoreLocationBodySchema = createStoreLocationBodySchema

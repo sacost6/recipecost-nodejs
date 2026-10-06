@@ -64,15 +64,17 @@ export class StoreLocation {
     name: 'state_code',
     type: 'varchar',
     length: 10,
+    nullable: true,
   })
-  stateCode!: string;
+  stateCode!: string | null;
 
   @Column({
     name: 'postal_code',
     type: 'varchar',
     length: 20,
+    nullable: true,
   })
-  postalCode!: string;
+  postalCode!: string | null;
 
   @Column({
     name: 'country_code',
