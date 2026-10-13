@@ -1,11 +1,11 @@
 import type { Request, Response } from 'express';
 import { requireUserId } from './utils/auth';
+import type { RecipeParams } from '../schemas/recipe.schema';
 import type {
   CreateRecipeIngredientInput,
   RecipeIngredientParams,
-  RecipeParams,
   UpdateRecipeIngredientInput,
-} from '../schemas/recipe.schema';
+} from '../schemas/recipe_ingredient.schema';
 import {
   getRecipeIngredientsService,
   createRecipeIngredientService,

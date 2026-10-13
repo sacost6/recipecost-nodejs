@@ -5,6 +5,12 @@ import {
   positiveSmallintSchema,
 } from './common.schema';
 
+const positiveSmallintPathSchema = z.coerce
+  .number()
+  .int()
+  .positive()
+  .max(32767);
+
 const createIngredientUnitConversionBodySchema = z
   .strictObject({
     ingredientId: positiveBigintIdSchema,
@@ -28,8 +34,8 @@ export const createIngredientUnitConversionSchema = z.object({
 export const ingredientUnitConversionByIdParamsSchema = z.object({
   params: z.object({
     ingredientId: positiveBigintIdSchema,
-    fromUnitId: positiveSmallintSchema,
-    toUnitId: positiveSmallintSchema,
+    fromUnitId: positiveSmallintPathSchema,
+    toUnitId: positiveSmallintPathSchema,
   }),
 });
 

@@ -16,7 +16,7 @@ const query = vi.hoisted(() => ({
 }));
 
 // Isolate database access, including data-source/environment initialization.
-vi.mock('../repositories/users.repo', () => ({ userRepository: repository }));
+vi.mock('../repositories/user.repo', () => ({ userRepository: repository }));
 
 // Keep real hashing/verification by default, with failure injection per test.
 vi.mock('argon2', async (importOriginal) => {

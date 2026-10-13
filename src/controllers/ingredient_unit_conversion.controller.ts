@@ -1,58 +1,91 @@
 import type { Request, Response } from 'express';
+import { requireUserId } from './utils/auth';
 import {
-  getIngredientUnitConversionsService,
+  createIngredientUnitConversionService,
+  deleteIngredientUnitConversionService,
   getIngredientUnitConversionByIngredientIdService,
   getIngredientUnitConversionByIdService,
+  getIngredientUnitConversionsService,
+  updateIngredientUnitConversionService,
 } from '../services/ingredient_unit_conversion.service';
-import {
-  IngredientUnitConversionByIngredientIdParamsSchema,
-  IngredientUnitConversionByIdParamsSchema,
-} from '../schemas/ingredient_unit_conversion.schema';
-import { HttpError } from '../middleware/errorHandling/error';
 
 export const getIngredientUnitConversions = async (
   req: Request,
   res: Response,
 ) => {
-  const ingredientUnitConversions = await getIngredientUnitConversionsService();
+  const conversions = await getIngredientUnitConversionsService(
+    requireUserId(req),
+  );
 
-  res.status(200).json({
-    status: 'success',
-    data: ingredientUnitConversions,
-  });
+  res.status(200).json({ status: 'success', data: conversions });
 };
 
 export const getIngredientUnitConversionByIngredientId = async (
-  req: Request<IngredientUnitConversionByIngredientIdParamsSchema>,
+  req: Request,
   res: Response,
 ) => {
-  const { ingredientId } = req.params;
+  const conversions = await getIngredientUnitConversionByIngredientIdService(
+    requireUserId(req),
+    String(req.params.ingredientId),
+  );
 
-  const ingredientUnitConversion =
-    await getIngredientUnitConversionByIngredientIdService(ingredientId);
-
-  res.status(200).json({
-    status: 'success',
-    data: ingredientUnitConversion,
-  });
+  res.status(200).json({ status: 'success', data: conversions });
 };
 
 export const getIngredientUnitConversionById = async (
-  req: Request<IngredientUnitConversionByIdParamsSchema>,
+  req: Request,
   res: Response,
 ) => {
   const { ingredientId, fromUnitId, toUnitId } = req.params;
-
-  const ingredientUnitConversion = await getIngredientUnitConversionByIdService(
-    ingredientId,
-    fromUnitId,
-    toUnitId,
+  const conversion = await getIngredientUnitConversionByIdService(
+    requireUserId(req),
+    String(ingredientId),
+    Number(fromUnitId),
+    Number(toUnitId),
   );
 
-  if (!ingredientUnitConversion) {
-    throw new HttpError(
-      404,
-      'Unit conversion does not exist for this ingredient.',
-    );
-  }
+  res.status(200).json({ status: 'success', data: conversion });
+};
+
+export const createIngredientUnitConversion = async (
+  req: Request,
+  res: Response,
+) => {
+  const conversion = await createIngredientUnitConversionService(
+    requireUserId(req),
+    req.body,
+  );
+
+  res.status(201).json({ status: 'success', data: conversion });
+};
+
+export const updateIngredientUnitConversion = async (
+  req: Request,
+  res: Response,
+) => {
+  const { ingredientId, fromUnitId, toUnitId } = req.params;
+  const conversion = await updateIngredientUnitConversionService(
+    requireUserId(req),
+    String(ingredientId),
+    Number(fromUnitId),
+    Number(toUnitId),
+    req.body,
+  );
+
+  res.status(200).json({ status: 'success', data: conversion });
+};
+
+export const deleteIngredientUnitConversion = async (
+  req: Request,
+  res: Response,
+) => {
+  const { ingredientId, fromUnitId, toUnitId } = req.params;
+  await deleteIngredientUnitConversionService(
+    requireUserId(req),
+    String(ingredientId),
+    Number(fromUnitId),
+    Number(toUnitId),
+  );
+
+  res.status(204).send();
 };

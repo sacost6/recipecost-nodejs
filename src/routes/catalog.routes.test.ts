@@ -8,7 +8,7 @@ const repositories = vi.hoisted(() => ({
   categories: { find: vi.fn(), findOneBy: vi.fn() },
   retailers: { find: vi.fn(), findOneBy: vi.fn() },
 }));
-vi.mock('../repositories/units.repo', () => ({
+vi.mock('../repositories/unit.repo', () => ({
   unitRepository: repositories.units,
 }));
 vi.mock('../repositories/ingredient_category.repo', () => ({
@@ -20,10 +20,10 @@ vi.mock('../repositories/retailer.repo', () => ({
 vi.mock('./auth.routes', async () => ({
   authRoutes: (await import('express')).Router(),
 }));
-vi.mock('./ingredients.routes', async () => ({
+vi.mock('./ingredient.routes', async () => ({
   ingredientRoutes: (await import('express')).Router(),
 }));
-vi.mock('./ingredient_products.routes', async () => ({
+vi.mock('./ingredient_product.routes', async () => ({
   ingredientProductRoutes: (await import('express')).Router(),
 }));
 vi.mock('../middleware/session.middleware', () => ({

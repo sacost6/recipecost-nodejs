@@ -33,7 +33,7 @@ const state = vi.hoisted(() => ({
   store: undefined as MemoryStore | undefined,
 }));
 
-vi.mock('../repositories/users.repo', () => ({ userRepository: repository }));
+vi.mock('../repositories/user.repo', () => ({ userRepository: repository }));
 vi.mock('../middleware/authRateLimit.middleware', () => {
   const passThrough: RequestHandler = (_req, _res, next) => next();
   return {

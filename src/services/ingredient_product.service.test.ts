@@ -21,7 +21,7 @@ const repository = vi.hoisted(() => ({
   createQueryBuilder: vi.fn(),
 }));
 const ingredientLookup = vi.hoisted(() => vi.fn());
-vi.mock('./ingredients.service', () => ({
+vi.mock('./ingredient.service', () => ({
   getIngredientByIdService: ingredientLookup,
 }));
 const source = metadataSource();
@@ -44,7 +44,7 @@ const query = vi.hoisted(() => ({
 }));
 
 // Do not import the real data source or read application database credentials.
-vi.mock('../repositories/ingredient_products.repo', () => ({
+vi.mock('../repositories/ingredient_product.repo', () => ({
   ingredientProductRepository: repository,
 }));
 

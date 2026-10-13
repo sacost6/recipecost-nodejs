@@ -10,11 +10,8 @@ import {
 
 import type {
   CreateRecipeInput,
-  CreateRecipeIngredientInput,
-  RecipeIngredientParams,
   RecipeParams,
   UpdateRecipeInput,
-  UpdateRecipeIngredientInput,
 } from '../schemas/recipe.schema';
 
 export const getRecipes = async (req: Request, res: Response) => {

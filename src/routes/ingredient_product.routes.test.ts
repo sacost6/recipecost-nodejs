@@ -37,7 +37,7 @@ const repository = vi.hoisted(() => ({
   delete: vi.fn(),
   createQueryBuilder: vi.fn(),
 }));
-const ingredients = vi.hoisted(() => ({ findOneBy: vi.fn() }));
+const ingredients = vi.hoisted(() => ({ findOne: vi.fn() }));
 vi.mock('../repositories/ingredient.repo', () => ({
   ingredientRepository: ingredients,
 }));
@@ -63,10 +63,10 @@ const session = vi.hoisted(() => ({ userId: undefined as string | undefined }));
 
 // Real app mounting, product router, validation, controllers, services and errors.
 // Session persistence and PostgreSQL semantics belong to their integration suites.
-vi.mock('../repositories/ingredient_products.repo', () => ({
+vi.mock('../repositories/ingredient_product.repo', () => ({
   ingredientProductRepository: repository,
 }));
-vi.mock('./ingredients.routes', async () => {
+vi.mock('./ingredient.routes', async () => {
   const { Router } = await import('express');
   return { ingredientRoutes: Router() };
 });
@@ -134,7 +134,7 @@ const findOwned = (criteria: Criteria) =>
       (criteria.version === undefined || row.version === criteria.version),
   );
 const noStorageCalls = () => {
-  expect(ingredients.findOneBy).not.toHaveBeenCalled();
+  expect(ingredients.findOne).not.toHaveBeenCalled();
   for (const operation of Object.values(repository))
     expect(operation).not.toHaveBeenCalled();
 };
@@ -172,10 +172,19 @@ beforeEach(() => {
   vi.stubEnv('NODE_ENV', 'test');
   session.userId = aliceId;
   stored = [{ ...product }, { ...bobProduct }];
-  ingredients.findOneBy.mockImplementation(
-    async (conditions: { ingredientId: string }[]) =>
-      conditions.some((c) => c.ingredientId === input.ingredientId)
-        ? { ingredientId: input.ingredientId, userId: null }
+  ingredients.findOne.mockImplementation(
+    async (criteria: { where: { ingredientId: string; userId: unknown }[] }) =>
+      criteria.where.some(
+        (condition, index) =>
+          condition.ingredientId === input.ingredientId &&
+          (index === 0 || condition.userId === aliceId),
+      )
+        ? {
+            ingredientId: input.ingredientId,
+            userId: null,
+            categoryId: null,
+            category: null,
+          }
         : null,
   );
   repository.create.mockImplementation((values) =>

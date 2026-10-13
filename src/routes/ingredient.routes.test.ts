@@ -30,8 +30,10 @@ vi.mock('./ingredient_category.routes', async () => {
 });
 
 const session = vi.hoisted(() => ({ userId: undefined as string | undefined }));
+const categoryRepository = vi.hoisted(() => ({ findOneBy: vi.fn() }));
 const repository = vi.hoisted(() => ({
   find: vi.fn(),
+  findOne: vi.fn(),
   findOneBy: vi.fn(),
   create: vi.fn(),
   save: vi.fn(),
@@ -46,12 +48,15 @@ const repository = vi.hoisted(() => ({
 vi.mock('../repositories/ingredient.repo', () => ({
   ingredientRepository: repository,
 }));
+vi.mock('../repositories/ingredient_category.repo', () => ({
+  ingredientCategoryRepository: categoryRepository,
+}));
 // These tests cover ingredients; authentication has its own HTTP/session suite.
 vi.mock('./auth.routes', async () => {
   const { Router } = await import('express');
   return { authRoutes: Router() };
 });
-vi.mock('./ingredient_products.routes', async () => {
+vi.mock('./ingredient_product.routes', async () => {
   const { Router } = await import('express');
   return { ingredientProductRoutes: Router() };
 });
@@ -80,8 +85,8 @@ const ingredientId = '9007199254740993';
 const createdAt = new Date('2026-01-02T03:04:05.000Z');
 const updatedAt = new Date('2026-01-03T04:05:06.000Z');
 
-const ingredient = (overrides: Partial<Ingredient> = {}): Ingredient =>
-  Object.assign(new Ingredient(), {
+const ingredient = (overrides: Partial<Ingredient> = {}): Ingredient => {
+  const value = Object.assign(new Ingredient(), {
     ingredientId,
     userId,
     name: 'Flour',
@@ -92,6 +97,15 @@ const ingredient = (overrides: Partial<Ingredient> = {}): Ingredient =>
     version: 7,
     ...overrides,
   });
+  value.category =
+    value.categoryId === null
+      ? null
+      : ({
+          categoryId: value.categoryId,
+          name: 'Baking',
+        } as Ingredient['category']);
+  return value;
+};
 
 const returnedRow = (
   overrides: Partial<IngredientRow> = {},
@@ -111,6 +125,9 @@ const jsonIngredient = (value: Ingredient) => ({
   ingredientId: value.ingredientId,
   userId: value.userId,
   categoryId: value.categoryId,
+  category: value.category
+    ? { categoryId: value.category.categoryId, name: value.category.name }
+    : null,
   name: value.name,
   description: value.description,
   createdAt: value.createdAt.toISOString(),
@@ -134,6 +151,7 @@ const expectNoRepositoryCalls = () => {
   for (const operation of Object.values(repository)) {
     expect(operation).not.toHaveBeenCalled();
   }
+  expect(categoryRepository.findOneBy).not.toHaveBeenCalled();
 };
 
 const endpoint = (method: string) =>
@@ -148,11 +166,19 @@ describe('ingredients API (repository mocked)', () => {
     session.userId = userId;
     vi.stubEnv('NODE_ENV', 'test');
     repository.find.mockResolvedValue([]);
-    repository.findOneBy.mockImplementation(
-      async (conditions: { ingredientId: string }[]) =>
-        conditions.some((c) => c.ingredientId === ingredientId)
+    repository.findOne.mockImplementation(
+      async (criteria: { where: { ingredientId: string }[] }) =>
+        criteria.where.some(
+          (condition) => condition.ingredientId === ingredientId,
+        )
           ? ingredient()
           : null,
+    );
+    categoryRepository.findOneBy.mockImplementation(
+      async ({ categoryId }: { categoryId: number }) => ({
+        categoryId,
+        name: 'Baking',
+      }),
     );
     repository.create.mockImplementation((values: Partial<Ingredient>) =>
       Object.assign(new Ingredient(), values),
@@ -194,6 +220,7 @@ describe('ingredients API (repository mocked)', () => {
       });
       expect(repository.find).toHaveBeenCalledWith({
         where: [{ userId: IsNull() }, { userId }],
+        relations: { category: true },
         order: { name: 'ASC' },
       });
     });
@@ -204,30 +231,36 @@ describe('ingredients API (repository mocked)', () => {
       'preserves valid bigint ID %s as an exact string',
       async (id) => {
         const stored = ingredient({ ingredientId: id });
-        repository.findOneBy.mockResolvedValue(stored);
+        repository.findOne.mockResolvedValue(stored);
         const response = await request(app).get(`/api/ingredients/${id}`);
         expect(response.status).toBe(200);
         expect(response.body).toEqual({
           status: 'success',
           data: jsonIngredient(stored),
         });
-        expect(repository.findOneBy).toHaveBeenCalledWith([
-          { ingredientId: id, userId: IsNull() },
-          { ingredientId: id, userId },
-        ]);
+        expect(repository.findOne).toHaveBeenCalledWith({
+          where: [
+            { ingredientId: id, userId: IsNull() },
+            { ingredientId: id, userId },
+          ],
+          relations: { category: true },
+        });
       },
     );
 
     it('trims a valid ID before querying the repository', async () => {
-      repository.findOneBy.mockResolvedValue(ingredient());
+      repository.findOne.mockResolvedValue(ingredient());
       const response = await request(app).get(
         `/api/ingredients/${encodeURIComponent(` ${ingredientId} `)}`,
       );
       expect(response.status).toBe(200);
-      expect(repository.findOneBy).toHaveBeenCalledWith([
-        { ingredientId, userId: IsNull() },
-        { ingredientId, userId },
-      ]);
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: [
+          { ingredientId, userId: IsNull() },
+          { ingredientId, userId },
+        ],
+        relations: { category: true },
+      });
     });
 
     it('returns a JSON 404 for a valid ID that does not exist', async () => {
@@ -365,7 +398,7 @@ describe('ingredients API (repository mocked)', () => {
   describe('PATCH /api/ingredients/:ingredientId', () => {
     it('matches the expected version, changes only supplied fields and returns the written row', async () => {
       // Any follow-up read would return a different writer's newer result.
-      repository.findOneBy.mockResolvedValue(
+      repository.findOne.mockResolvedValue(
         ingredient({ name: 'Later edit', version: 9 }),
       );
       const response = await request(app)
@@ -384,7 +417,7 @@ describe('ingredients API (repository mocked)', () => {
         ),
       });
       expect(response.body.data).not.toHaveProperty('ingredient_id');
-      expect(repository.findOneBy).toHaveBeenCalledTimes(1);
+      expect(repository.findOne).toHaveBeenCalledTimes(1);
       expect(repository.existsBy).not.toHaveBeenCalled();
       expect(repository.save).not.toHaveBeenCalled();
     });
@@ -511,7 +544,7 @@ describe('ingredients API (repository mocked)', () => {
       expect(response.status).toBe(204);
       expect(response.text).toBe('');
       expect(repository.delete).toHaveBeenCalledWith({ ingredientId, userId });
-      expect(repository.findOneBy).not.toHaveBeenCalled();
+      expect(repository.findOne).not.toHaveBeenCalled();
     });
 
     it('returns a JSON 404 when no row was deleted', async () => {
@@ -566,7 +599,7 @@ describe('ingredients API (repository mocked)', () => {
 
     it.each([
       ['list', 'find', 'get', '/api/ingredients'],
-      ['detail', 'findOneBy', 'get', `/api/ingredients/${ingredientId}`],
+      ['detail', 'findOne', 'get', `/api/ingredients/${ingredientId}`],
       ['create', 'save', 'post', '/api/ingredients'],
       ['update', 'update', 'patch', `/api/ingredients/${ingredientId}`],
       ['delete', 'delete', 'delete', `/api/ingredients/${ingredientId}`],

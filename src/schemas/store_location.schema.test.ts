@@ -6,7 +6,7 @@ import {
 
 const body = {
   retailerId: '9007199254740993',
-  addressLine1: '123 Main St',
+  streetName: '123 Main St',
   city: 'Chicago',
   stateCode: 'IL',
   postalCode: '60601',
@@ -29,7 +29,7 @@ describe('store location input', () => {
     const result = createStoreLocationSchema.parse({
       body: {
         ...body,
-        addressLine1: ' 123 Main St ',
+        streetName: ' 123 Main St ',
         city: ' Chicago ',
         postalCode: ' 00501 ',
         countryCode: ' us ',
@@ -38,8 +38,8 @@ describe('store location input', () => {
     expect(result.body).toEqual({ ...body, postalCode: '00501' });
   });
 
-  it.each([undefined, null, '', '   ', 60601, '1'.repeat(21)])(
-    'rejects an invalid or missing postal code: %j',
+  it.each(['', '   ', 60601, '1'.repeat(21)])(
+    'rejects an invalid postal code: %j',
     (postalCode) => {
       expect(
         createStoreLocationSchema.safeParse({ body: { ...body, postalCode } })
@@ -48,7 +48,21 @@ describe('store location input', () => {
     },
   );
 
-  it.each(['addressLine1', 'city'] as const)(
+  it('allows omitted or null state and postal fields', () => {
+    expect(
+      createStoreLocationSchema.parse({
+        body: { ...body, stateCode: null, postalCode: null },
+      }).body,
+    ).toMatchObject({ stateCode: null, postalCode: null });
+    const withoutPostal = Object.fromEntries(
+      Object.entries(body).filter(([field]) => field !== 'postalCode'),
+    );
+    expect(
+      createStoreLocationSchema.parse({ body: withoutPostal }).body,
+    ).not.toHaveProperty('postalCode');
+  });
+
+  it.each(['streetName', 'city'] as const)(
     'rejects whitespace-only %s',
     (field) => {
       expect(
@@ -61,7 +75,7 @@ describe('store location input', () => {
 
   it.each([
     ['storeNumber', 50],
-    ['addressLine1', 150],
+    ['streetName', 150],
     ['addressLine2', 150],
     ['city', 100],
     ['postalCode', 20],

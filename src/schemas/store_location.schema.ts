@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { positiveBigintIdSchema, stringSchema } from './common.schema';
 
-const createStoreLocationBodySchema = z.strictObject({
+const storeLocationFields = {
   retailerId: positiveBigintIdSchema,
   storeNumber: stringSchema.max(50).nullable().optional(),
   streetName: stringSchema.min(1).max(150),
@@ -9,10 +9,16 @@ const createStoreLocationBodySchema = z.strictObject({
   stateCode: stringSchema.length(2).nullable().optional(),
   city: stringSchema.min(1).max(100),
   postalCode: stringSchema.min(1).max(20).nullable().optional(),
-  countryCode: stringSchema.length(2).toUpperCase().default('US'),
+  countryCode: stringSchema.length(2).toUpperCase(),
+};
+
+const createStoreLocationBodySchema = z.strictObject({
+  ...storeLocationFields,
+  countryCode: storeLocationFields.countryCode.default('US'),
 });
 
-const updateStoreLocationBodySchema = createStoreLocationBodySchema
+const updateStoreLocationBodySchema = z
+  .strictObject(storeLocationFields)
   .partial()
   .refine((body) => Object.values(body).some((value) => value !== undefined), {
     message: 'At least one field is required to upgrade a store location.',

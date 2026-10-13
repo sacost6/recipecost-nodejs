@@ -8,7 +8,7 @@ import { unitRepository } from '../repositories/unit.repo';
 import {
   CreateRecipeIngredientInput,
   UpdateRecipeIngredientInput,
-} from '../schemas/recipe.schema';
+} from '../schemas/recipe_ingredient.schema';
 
 const requireOwnedRecipe = async (userId: string, recipeId: string) => {
   const recipe = await recipeRepository.findOneBy({ recipeId, userId });

@@ -6,6 +6,7 @@ import { HttpError } from '../middleware/errorHandling/error';
 import { requireUpdatedRow } from './utils/requireUpdatedRow';
 import { entityFromRow } from './utils/entityFromRow';
 import { IngredientRow } from './utils/databaseRowTypes';
+import { toTitleCase } from './utils/utils';
 import {
   CreateIngredientInput,
   UpdateIngredientInput,
@@ -20,12 +21,6 @@ const withCategory = async (ingredient: Ingredient): Promise<Ingredient> => {
         });
 
   return ingredient;
-};
-
-const toTitleCase = (str: string) => {
-  return str.toLocaleLowerCase().replace(/\b\w/g, function (char) {
-    return char.toUpperCase();
-  });
 };
 
 export const getIngredientsService = async (

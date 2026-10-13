@@ -18,7 +18,7 @@ const services = vi.hoisted(() => ({
   updateIngredientProductService: vi.fn(),
   deleteIngredientProductService: vi.fn(),
 }));
-vi.mock('../services/ingredient_products.service', () => services);
+vi.mock('../services/ingredient_product.service', () => services);
 
 type ProductResponse = Parameters<typeof getIngredientProducts>[1];
 
