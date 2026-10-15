@@ -9,6 +9,8 @@ import { User } from '../entities/User';
 import { ProductPrice } from '../entities/ProductPrice';
 import { StoreLocation } from '../entities/StoreLocation';
 import { Retailer } from '../entities/Retailer';
+import { Recipe } from '../entities/Recipe';
+import { RecipeIngredient } from '../entities/RecipeIngredient';
 
 /** Builds real PostgreSQL column metadata without opening a connection. */
 export class MetadataDataSource extends DataSource {
@@ -30,5 +32,7 @@ export const metadataSource = () =>
       ProductPrice,
       StoreLocation,
       Retailer,
+      Recipe,
+      RecipeIngredient,
     ],
   });

@@ -73,7 +73,7 @@ const operations = [
     method: 'patch',
     path: `/${recipeId}`,
     handler: 'updateRecipe',
-    body: { name: 'New name' },
+    body: { name: 'New name', version: 1 },
   },
   {
     name: 'delete recipe',

@@ -2,6 +2,9 @@ import { HttpError } from '../middleware/errorHandling/error';
 import { Recipe } from '../entities/Recipe';
 import { recipeRepository } from '../repositories/recipe.repo';
 import { CreateRecipeInput, UpdateRecipeInput } from '../schemas/recipe.schema';
+import { RecipeRow } from './utils/databaseRowTypes';
+import { entityFromRow } from './utils/entityFromRow';
+import { requireUpdatedRow } from './utils/requireUpdatedRow';
 
 export const getRecipesService = async (userId: string): Promise<Recipe[]> => {
   return recipeRepository.find({
@@ -47,16 +50,22 @@ export const updateRecipeService = async (
   recipeId: string,
   input: UpdateRecipeInput,
 ): Promise<Recipe> => {
-  const recipe = await getRecipeByIdService(userId, recipeId);
+  const { version: expectedVersion, ...changes } = input;
+  const result = await recipeRepository.update(
+    { recipeId, userId, version: expectedVersion },
+    changes,
+    { returning: '*' },
+  );
 
-  if (input.name !== undefined) recipe.name = input.name;
-  if (input.description !== undefined) recipe.description = input.description;
-  if (input.instructions !== undefined)
-    recipe.instructions = input.instructions;
-  if (input.servings !== undefined) recipe.servings = input.servings;
+  const row = await requireUpdatedRow(
+    result.raw as RecipeRow[],
+    () => recipeRepository.existsBy({ recipeId, userId }),
+    'Recipe',
+  );
 
-  return recipeRepository.save(recipe);
+  return entityFromRow(recipeRepository, row);
 };
+
 export const deleteRecipeService = async (
   userId: string,
   recipeId: string,

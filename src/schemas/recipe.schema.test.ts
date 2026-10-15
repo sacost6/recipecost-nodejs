@@ -41,7 +41,7 @@ describe('create recipe schema', () => {
     expect(createRecipeSchema.safeParse({ body: invalid }).success).toBe(false);
   });
 
-  it.each(['userId', 'recipeId', 'ingredients', 'cost'])(
+  it.each(['userId', 'recipeId', 'ingredients', 'cost', 'version'])(
     'rejects client-supplied field %s',
     (field) => {
       expect(
@@ -59,23 +59,44 @@ describe('recipe path and update schemas', () => {
     ).toEqual({ params: { recipeId } });
   });
 
-  it('rejects an empty patch and accepts a partial nullable-field update', () => {
+  it('requires a changed field and a valid version for updates', () => {
     expect(
       updateRecipeSchema.safeParse({ params: { recipeId }, body: {} }).success,
     ).toBe(false);
     expect(
       updateRecipeSchema.parse({
         params: { recipeId },
-        body: { description: null },
+        body: { description: null, version: 2 },
       }),
-    ).toEqual({ params: { recipeId }, body: { description: null } });
+    ).toEqual({
+      params: { recipeId },
+      body: { description: null, version: 2 },
+    });
+    expect(
+      updateRecipeSchema.safeParse({
+        params: { recipeId },
+        body: { version: 2 },
+      }).success,
+    ).toBe(false);
+    expect(
+      updateRecipeSchema.safeParse({
+        params: { recipeId },
+        body: { name: 'Updated', version: 0 },
+      }).success,
+    ).toBe(false);
+    expect(
+      updateRecipeSchema.safeParse({
+        params: { recipeId },
+        body: { name: 'Updated' },
+      }).success,
+    ).toBe(false);
   });
 
   it('rejects unknown update fields and invalid IDs', () => {
     expect(
       updateRecipeSchema.safeParse({
         params: { recipeId },
-        body: { userId: 'forged' },
+        body: { name: 'Updated', version: 1, userId: 'forged' },
       }).success,
     ).toBe(false);
     expect(

@@ -2,6 +2,7 @@ import * as z from 'zod';
 import {
   positiveBigintIdSchema,
   positiveSmallintSchema,
+  positiveIntegerSchema,
   stringSchema,
 } from './common.schema';
 
@@ -20,8 +21,10 @@ const createRecipeBodySchema = z.strictObject({
 const updateRecipeBodySchema = z
   .strictObject(recipeFields)
   .partial()
+  .extend({ version: positiveIntegerSchema })
   .refine(
-    (changes) => Object.values(changes).some((value) => value !== undefined),
+    ({ version: _version, ...changes }) =>
+      Object.values(changes).some((value) => value !== undefined),
     {
       message: 'At least one field is required to update a recipe',
     },

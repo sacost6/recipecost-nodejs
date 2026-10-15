@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
   Check,
   Index,
+  VersionColumn,
 } from 'typeorm';
 
 import { User } from './User';
@@ -52,6 +53,9 @@ export class Recipe {
     type: 'smallint',
   })
   servings!: number;
+
+  @VersionColumn({ default: 1 })
+  version!: number;
 
   @ManyToOne(() => User, {
     nullable: false,

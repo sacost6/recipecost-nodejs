@@ -95,7 +95,7 @@ describe('recipe controller', () => {
   });
 
   it('updates only through the owner and the selected recipe ID', async () => {
-    const changes = { name: 'New recipe name' };
+    const changes = { name: 'New recipe name', version: 1 };
     const { res, response } = responseFor();
     await updateRecipe(
       requestFor({ body: changes }) as Request<
