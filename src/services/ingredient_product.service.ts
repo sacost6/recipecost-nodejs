@@ -99,6 +99,7 @@ export const createIngredientProductService = async (
     productName: input.productName,
     packageQuantity: input.packageQuantity,
     upc: input.upc ?? null,
+    krogerSyncEnabled: input.krogerSyncEnabled ?? false,
   });
 
   return ingredientProductRepository.save(ingredientProduct);
@@ -135,6 +136,7 @@ export const updateIngredientProductService = async (
       productName: input.productName,
       packageQuantity: input.packageQuantity,
       upc: input.upc,
+      krogerSyncEnabled: input.krogerSyncEnabled,
     },
     { returning: '*' },
   );

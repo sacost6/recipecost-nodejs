@@ -7,6 +7,7 @@ import {
   getRecipeById,
   getRecipes,
   updateRecipe,
+  getRecipePricing,
 } from '../controllers/recipe.controller';
 import {
   createRecipeIngredient,
@@ -24,12 +25,18 @@ import {
   deleteRecipeIngredientSchema,
   updateRecipeIngredientSchema,
 } from '../schemas/recipe_ingredient.schema';
+import { recipePricingSchema } from '../schemas/recipe_pricing.schema';
 
 export const recipeRoutes = Router();
 
 recipeRoutes.use(requireAuth);
 
 recipeRoutes.get('/', getRecipes);
+recipeRoutes.get(
+  '/:recipeId/pricing',
+  validateRequest(recipePricingSchema),
+  getRecipePricing,
+);
 recipeRoutes.post('/', validateRequest(createRecipeSchema), createRecipe);
 recipeRoutes.get(
   '/:recipeId',

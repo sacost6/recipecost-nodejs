@@ -72,6 +72,9 @@ export class IngredientProduct {
   })
   upc!: string | null;
 
+  @Column({ name: 'kroger_sync_enabled', type: 'boolean', default: false })
+  krogerSyncEnabled!: boolean;
+
   @Column({
     name: 'user_id',
     type: 'bigint',

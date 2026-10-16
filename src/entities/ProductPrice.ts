@@ -48,6 +48,9 @@ export class ProductPrice {
   })
   price!: string;
 
+  @Column({ type: 'varchar', length: 20, default: 'manual' })
+  source!: 'manual' | 'kroger';
+
   @Column({
     name: 'currency_code',
     type: 'char',

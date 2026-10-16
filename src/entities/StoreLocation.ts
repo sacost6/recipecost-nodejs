@@ -40,6 +40,14 @@ export class StoreLocation {
   storeNumber!: string | null;
 
   @Column({
+    name: 'kroger_location_id',
+    type: 'varchar',
+    length: 30,
+    nullable: true,
+  })
+  krogerLocationId!: string | null;
+
+  @Column({
     name: 'address_line1',
     type: 'varchar',
     length: 150,

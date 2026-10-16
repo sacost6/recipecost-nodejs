@@ -10,6 +10,7 @@ const storeLocationFields = {
   city: stringSchema.min(1).max(100),
   postalCode: stringSchema.min(1).max(20).nullable().optional(),
   countryCode: stringSchema.length(2).toUpperCase(),
+  krogerLocationId: stringSchema.max(30).nullable().optional(),
 };
 
 const createStoreLocationBodySchema = z.strictObject({

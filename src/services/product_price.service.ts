@@ -57,6 +57,7 @@ export const createProductPriceService = async (
     storeLocationId: input.storeLocationId,
     price: input.price,
     currencyCode: input.currencyCode,
+    source: 'manual',
   });
 
   return productPriceRepository.save(productPrice);

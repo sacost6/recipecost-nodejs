@@ -11,6 +11,7 @@ const handlers = vi.hoisted(() => ({
   createRecipe: vi.fn(),
   updateRecipe: vi.fn(),
   deleteRecipe: vi.fn(),
+  getRecipePricing: vi.fn(),
   getRecipeIngredients: vi.fn(),
   createRecipeIngredient: vi.fn(),
   updateRecipeIngredient: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock('../controllers/recipe.controller', () => ({
   createRecipe: handlers.createRecipe,
   updateRecipe: handlers.updateRecipe,
   deleteRecipe: handlers.deleteRecipe,
+  getRecipePricing: handlers.getRecipePricing,
 }));
 vi.mock('../controllers/recipe_ingredient.controller', () => ({
   getRecipeIngredients: handlers.getRecipeIngredients,
@@ -43,6 +45,7 @@ app.use(errorHandler);
 
 const recipeId = '9007199254740993';
 const lineId = '9007199254740995';
+const storeLocationId = '9007199254740997';
 const recipeInput = {
   name: 'Pancakes',
   servings: 4,
@@ -55,6 +58,12 @@ const lineInput = {
 };
 const operations = [
   { name: 'list recipes', method: 'get', path: '', handler: 'getRecipes' },
+  {
+    name: 'get recipe pricing',
+    method: 'get',
+    path: `/${recipeId}/pricing?storeLocationId=${storeLocationId}`,
+    handler: 'getRecipePricing',
+  },
   {
     name: 'create recipe',
     method: 'post',
@@ -213,5 +222,11 @@ describe('recipe routes', () => {
     for (const handler of Object.values(handlers)) {
       expect(handler).not.toHaveBeenCalled();
     }
+  });
+
+  it('requires a store location for recipe pricing', async () => {
+    const response = await request(app).get(`/api/recipes/${recipeId}/pricing`);
+    expect(response.status).toBe(400);
+    expect(handlers.getRecipePricing).not.toHaveBeenCalled();
   });
 });

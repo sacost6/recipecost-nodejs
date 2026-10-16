@@ -7,6 +7,11 @@ import {
   getRecipesService,
   updateRecipeService,
 } from '../services/recipe.service';
+import { getRecipePricingService } from '../services/recipe_pricing.service';
+import type {
+  RecipePricingParams,
+  RecipePricingQuery,
+} from '../schemas/recipe_pricing.schema';
 
 import type {
   CreateRecipeInput,
@@ -60,4 +65,16 @@ export const deleteRecipe = async (
 ) => {
   await deleteRecipeService(requireUserId(req), req.params.recipeId);
   res.status(204).send();
+};
+
+export const getRecipePricing = async (
+  req: Request<RecipePricingParams, unknown, unknown, RecipePricingQuery>,
+  res: Response,
+) => {
+  const pricing = await getRecipePricingService(
+    requireUserId(req),
+    req.params.recipeId,
+    req.query.storeLocationId,
+  );
+  res.status(200).json({ status: 'success', data: pricing });
 };
