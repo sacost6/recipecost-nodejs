@@ -14,7 +14,6 @@ const createIngredientProductBodySchema = z.strictObject({
   productName: stringSchema.min(1, 'Product Name is required').max(150),
   packageQuantity: positiveDecimal12_4Schema,
   upc: stringSchema.max(20).nullable().optional(),
-  krogerSyncEnabled: z.boolean().optional(),
 });
 
 const updateIngredientProductBodySchema = createIngredientProductBodySchema
