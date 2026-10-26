@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { HttpError } from '../middleware/errorHandling/error';
+import { getKrogerProduct } from './kroger_service.client';
 import { searchKrogerLocations } from './kroger_location.service';
 
 const jsonResponse = (body: unknown, status = 200) =>
@@ -11,77 +12,96 @@ const location = {
   name: 'Kroger Marketplace',
   chain: 'KROGER',
   storeNumber: '00390',
-  address: {
-    addressLine1: '123 Main St',
-    addressLine2: '',
-    city: 'Maineville',
-    state: 'OH',
-    zipCode: '45039',
-  },
+  addressLine1: '123 Main St',
+  addressLine2: null,
+  city: 'Maineville',
+  stateCode: 'OH',
+  postalCode: '45039',
 };
 
 afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-describe('Kroger location search', () => {
-  it('requests nearby locations and normalizes store address data', async () => {
-    vi.stubEnv('KROGER_CLIENT_ID', 'client-id');
-    vi.stubEnv('KROGER_CLIENT_SECRET', 'client-secret');
+describe('Kroger service client', () => {
+  it('calls the internal Kroger service and returns its location data', async () => {
+    vi.stubEnv('KROGER_SERVICE_URL', 'http://kroger-service:3001');
+    vi.stubEnv('KROGER_SERVICE_TOKEN', 'internal-token');
     const fetcher = vi
       .fn<typeof globalThis.fetch>()
-      .mockResolvedValueOnce(jsonResponse({ access_token: 'token' }))
-      .mockResolvedValueOnce(jsonResponse({ data: [location] }));
+      .mockResolvedValue(jsonResponse({ status: 'success', data: [location] }));
 
     await expect(searchKrogerLocations(query, fetcher)).resolves.toEqual([
-      {
-        locationId: '01400390',
-        name: 'Kroger Marketplace',
-        chain: 'KROGER',
-        storeNumber: '00390',
-        addressLine1: '123 Main St',
-        addressLine2: null,
-        city: 'Maineville',
-        stateCode: 'OH',
-        postalCode: '45039',
-      },
+      location,
     ]);
 
-    const requestUrl = new globalThis.URL(String(fetcher.mock.calls[1][0]));
-    expect(requestUrl.origin).toBe('https://api.kroger.com');
-    expect(requestUrl.pathname).toBe('/v1/locations');
-    expect(requestUrl.searchParams.get('filter.zipCode.near')).toBe('45044');
-    expect(requestUrl.searchParams.get('filter.radiusInMiles')).toBe('25');
-    expect(requestUrl.searchParams.get('filter.limit')).toBe('200');
-    expect(requestUrl.searchParams.has('filter.chain')).toBe(false);
-    expect(fetcher.mock.calls[0][1]?.body).toEqual(
-      new globalThis.URLSearchParams({ grant_type: 'client_credentials' }),
-    );
+    const [requestUrl, requestOptions] = fetcher.mock.calls[0];
+    const url = new globalThis.URL(String(requestUrl));
+    expect(url.origin).toBe('http://kroger-service:3001');
+    expect(url.pathname).toBe('/v1/locations');
+    expect(url.searchParams.get('zipCode')).toBe('45044');
+    expect(url.searchParams.get('radiusInMiles')).toBe('25');
+    expect(requestOptions?.headers).toMatchObject({
+      Authorization: 'Bearer internal-token',
+      Accept: 'application/json',
+    });
+    expect(requestOptions?.cache).toBe('no-store');
   });
 
-  it('reports missing credentials without calling Kroger', async () => {
-    vi.stubEnv('KROGER_CLIENT_ID', '');
-    vi.stubEnv('KROGER_CLIENT_SECRET', '');
+  it('reports missing internal service configuration without making a request', async () => {
+    vi.stubEnv('KROGER_SERVICE_URL', '');
+    vi.stubEnv('KROGER_SERVICE_TOKEN', '');
     const fetcher = vi.fn<typeof globalThis.fetch>();
 
     await expect(searchKrogerLocations(query, fetcher)).rejects.toMatchObject({
       statusCode: 503,
-      message: 'Kroger API credentials are not configured.',
+      message: 'Kroger service is not configured.',
     } satisfies Partial<HttpError>);
     expect(fetcher).not.toHaveBeenCalled();
   });
 
-  it('surfaces upstream failures as a gateway error', async () => {
-    vi.stubEnv('KROGER_CLIENT_ID', 'client-id');
-    vi.stubEnv('KROGER_CLIENT_SECRET', 'client-secret');
+  it('maps internal service failures to a safe gateway error', async () => {
+    vi.stubEnv('KROGER_SERVICE_URL', 'http://kroger-service:3001');
+    vi.stubEnv('KROGER_SERVICE_TOKEN', 'internal-token');
     const fetcher = vi
       .fn<typeof globalThis.fetch>()
-      .mockResolvedValueOnce(jsonResponse({ access_token: 'token' }))
-      .mockResolvedValueOnce(jsonResponse({}, 429));
+      .mockResolvedValue(
+        jsonResponse(
+          { status: 'error', message: 'secret provider detail' },
+          502,
+        ),
+      );
 
     await expect(searchKrogerLocations(query, fetcher)).rejects.toMatchObject({
       statusCode: 502,
-      message: 'Unable to search Kroger locations right now.',
+      message: 'Unable to complete the Kroger request right now.',
     });
+  });
+
+  it('proxies a product lookup and returns the product payload unchanged', async () => {
+    vi.stubEnv('KROGER_SERVICE_URL', 'http://kroger-service:3001');
+    vi.stubEnv('KROGER_SERVICE_TOKEN', 'internal-token');
+    const productPayload = {
+      data: [{ upc: '0001234567890', price: { regular: 4.99 } }],
+    };
+    const fetcher = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(
+        jsonResponse({ status: 'success', data: productPayload }),
+      );
+
+    await expect(
+      getKrogerProduct('0001234567890', '01400390', fetcher),
+    ).resolves.toEqual(productPayload);
+
+    const [requestUrl, requestOptions] = fetcher.mock.calls[0];
+    const url = new globalThis.URL(String(requestUrl));
+    expect(url.pathname).toBe('/v1/products/0001234567890');
+    expect(url.searchParams.get('locationId')).toBe('01400390');
+    expect(requestOptions?.headers).toMatchObject({
+      Authorization: 'Bearer internal-token',
+      Accept: 'application/json',
+    });
+    expect(requestOptions?.cache).toBe('no-store');
   });
 });

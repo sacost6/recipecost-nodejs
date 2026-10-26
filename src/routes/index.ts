@@ -9,6 +9,7 @@ import { Router } from 'express';
 import { productPriceRoutes } from './product_prices.routes';
 import { recipeRoutes } from './recipe.routes';
 import { ingredientUnitConversionRoutes } from './ingredient_unit_conversion.routes';
+import { krogerRoutes } from './kroger.routes';
 
 export const RouteMap: [string, Router][] = [
   ['/api/ingredients', ingredientRoutes],
@@ -18,6 +19,7 @@ export const RouteMap: [string, Router][] = [
   ['/api/retailers', retailerRoutes],
   ['/api/categories', ingredientCategoryRoutes],
   ['/api/store-locations', storeLocationRoutes],
+  ['/api/kroger', krogerRoutes],
   ['/api/product-prices', productPriceRoutes],
   ['/api/recipes', recipeRoutes],
   ['/api/ingredient-unit-conversions', ingredientUnitConversionRoutes],
