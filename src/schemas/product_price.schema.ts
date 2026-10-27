@@ -10,6 +10,7 @@ const createProductPriceBodySchema = z.strictObject({
   storeLocationId: positiveBigintIdSchema,
   price: nonnegativeDecimal12_2Schema,
   currencyCode: currencyCodeSchema,
+  source: z.enum(['manual', 'kroger']).optional(),
 });
 
 const updateProductPriceBodySchema = z.strictObject({

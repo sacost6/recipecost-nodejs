@@ -2,6 +2,11 @@ import * as z from 'zod';
 import { HttpError } from '../middleware/errorHandling/error';
 import { logger } from '../middleware/logging.middleware';
 import type { KrogerLocationSearchQuery } from '../schemas/kroger_location.schema';
+import {
+  krogerProductSuggestionSchema,
+  type KrogerProductSearchQuery,
+  type KrogerProductSuggestion,
+} from '../schemas/kroger_product.schema';
 
 const locationSchema = z.object({
   locationId: z.string(),
@@ -121,4 +126,31 @@ export const getKrogerProduct = async (
     'product lookup',
     fetcher,
   );
+};
+
+export const searchKrogerProducts = async (
+  query: KrogerProductSearchQuery,
+  fetcher: typeof globalThis.fetch = globalThis.fetch,
+): Promise<KrogerProductSuggestion[]> => {
+  const params = new globalThis.URLSearchParams({
+    term: query.term,
+    locationId: query.locationId,
+  });
+  const data = await requestKrogerService<unknown>(
+    `/v1/products/search?${params.toString()}`,
+    'product search',
+    fetcher,
+  );
+  try {
+    return z.array(krogerProductSuggestionSchema).parse(data);
+  } catch (error) {
+    logger.error(
+      {
+        stage: 'product search response parsing',
+        errorType: error instanceof Error ? error.name : 'UnknownError',
+      },
+      'Kroger service returned an invalid response',
+    );
+    throw new HttpError(502, 'Kroger service returned an invalid response.');
+  }
 };
