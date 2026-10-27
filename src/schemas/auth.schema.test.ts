@@ -75,13 +75,13 @@ describe.each([
 });
 
 describe('registration password policy', () => {
-  it('requires at least 15 characters', () => {
+  it('requires at least 8 characters', () => {
     expect(
-      registerSchema.safeParse({ body: { email, password: 'a'.repeat(15) } })
+      registerSchema.safeParse({ body: { email, password: 'a'.repeat(8) } })
         .success,
     ).toBe(true);
     expect(
-      registerSchema.safeParse({ body: { email, password: 'a'.repeat(14) } })
+      registerSchema.safeParse({ body: { email, password: 'a'.repeat(7) } })
         .success,
     ).toBe(false);
   });

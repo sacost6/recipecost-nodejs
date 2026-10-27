@@ -4,7 +4,7 @@ import { emailSchema } from './common.schema';
 export const registerSchema = z.object({
   body: z.strictObject({
     email: emailSchema,
-    password: z.string().min(15).max(128),
+    password: z.string().min(8).max(128),
   }),
 });
 
