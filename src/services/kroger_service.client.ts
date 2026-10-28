@@ -32,12 +32,14 @@ const requestKrogerService = async <T>(
   stage: string,
   fetcher: typeof globalThis.fetch,
 ): Promise<T> => {
+  // Validate that the Kroger service URL and token are configured in the environment variables.
   const serviceUrl = process.env.KROGER_SERVICE_URL?.replace(/\/$/, '');
   const serviceToken = process.env.KROGER_SERVICE_TOKEN;
   if (!serviceUrl || !serviceToken) {
     throw new HttpError(503, 'Kroger service is not configured.');
   }
 
+  // Make a request to the Kroger service with a timeout and no caching.
   let response: globalThis.Response;
   try {
     response = await fetcher(`${serviceUrl}${path}`, {
@@ -58,7 +60,7 @@ const requestKrogerService = async <T>(
     );
     throw new HttpError(503, 'Kroger service is unavailable right now.');
   }
-
+  // Check if the response from the Kroger service is not OK (status code not in the range 200-299).
   if (!response.ok) {
     logger.error(
       { stage, statusCode: response.status },
