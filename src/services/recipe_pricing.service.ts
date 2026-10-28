@@ -149,7 +149,7 @@ export const getRecipePricingService = async (
         ? new Date(result.priceRecordedAt)
         : null,
       cost: result?.cost ?? null,
-      issue: result?.issue ?? 'missing_conversion',
+      issue: result ? result.issue : 'missing_conversion',
     };
   });
 
